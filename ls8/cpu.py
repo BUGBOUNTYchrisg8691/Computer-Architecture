@@ -61,6 +61,21 @@ class CPU:
             print(" %02X" % self.reg[i], end='')
 
         print()
+        
+    def ram_read(self, mar):
+        """
+        Accepts a Memory Address Register and returns 
+        the Memory Data Register stored there.
+        """
+        return self.ram[mar]
+    
+    def ram_write(self, mdr, mar):
+        """
+        Accepts a Memory Data Register and 
+        a Memory Address Register and writes the MDR to
+        the MAR in memory.
+        """
+        self.ram[mar] = mdr
 
     def run(self):
         """Run the CPU."""
