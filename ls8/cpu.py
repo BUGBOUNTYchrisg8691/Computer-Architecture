@@ -8,8 +8,10 @@ class CPU:
     def __init__(self):
         """Construct a new CPU."""
         self.ram = [0] * 256
-        self.reg = [0] * 8
+        self.reg = ([0] * 8)
+        self.reg[7] = 0xF4
         self.pc = 0
+        self.fl = 0
 
     def load(self):
         """Load a program into memory."""
@@ -29,7 +31,8 @@ class CPU:
         ]
 
         for instruction in program:
-            self.ram[address] = instruction
+            self.ram_write(instruction, address)
+            # self.ram[address] = instruction
             address += 1
 
 
@@ -79,4 +82,36 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        ir = None
+        running = True
+        
+        # Instruction cases
+        LDI = 0b10000010
+        PRN = 0b01000111
+        HLT = 0b00000001
+        
+        while running:
+            # Fetch the next instruction and store in
+            # in the Instruction Register
+            ir = self.ram_read(self.pc)
+            
+            # Decode the instruction
+            if ir == HLT:
+                running = False
+                sys.exit(0)
+
+            elif ir == LDI:
+                mar = self.ram_read(self.pc + 1)
+                mdr = self.ram_read(self.pc + 2)
+                self.reg[mar] = mdr
+                self.pc += 3
+                
+            elif ir == PRN:
+                mar = self.ram_read(self.pc + 1)
+                print(self.reg[mar])
+                self.pc += 2
+                
+            else:
+                print("Invalid instruction... Exiting...")
+                running = False
+                sys.exit(1)
