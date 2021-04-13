@@ -24,30 +24,20 @@ class CPU:
             program = self.parse_instructions(program_file)
         
         else:
-            # program = [
-            #     # From print8.ls8
-            #     0b10000010, # LDI R0,8
-            #     0b00000000,
-            #     0b00001000,
-            #     0b01000111, # PRN R0
-            #     0b00000000,
-            #     0b00000001, # HLT
-            # ]
             print(f"Usage: python3 {os.path.basename(__file__)} <path to instruction set file>")
             sys.exit(1)
 
         for instruction in program:
             self.ram_write(instruction, address)
-            # self.ram[address] = instruction
             address += 1
 
 
     def alu(self, mov_pc, instr_ident):
         """ALU operations."""
-        regs_from_mar = []
+        regs= []
         
         for i in range(self.pc + 1, self.pc + mov_pc):
-            regs_from_mar.append(i)
+            regs.append(i)
         
         # Instruction Identifiers
         ADD = 0b0000
@@ -84,56 +74,56 @@ class CPU:
         # XOR = 0b10101011
 
         if instr_ident == ADD:
-            self.reg[self.ram[regs_from_mar[0]]] += self.reg[self.ram[regs_from_mar[1]]]
+            self.reg[self.ram[regs[0]]] += self.reg[self.ram[regs[1]]]
             self.pc += mov_pc
             
         elif instr_ident == AND:
-            self.reg[self.ram[regs_from_mar[0]]] &= self.reg[self.ram[regs_from_mar[1]]]
+            self.reg[self.ram[regs[0]]] &= self.reg[self.ram[regs[1]]]
             self.pc += mov_pc
             
         elif instr_ident == DEC:
-            self.reg[self.ram[regs_from_mar[0]]] -= 0b00000001
+            self.reg[self.ram[regs[0]]] -= 0b00000001
             self.pc += mov_pc
             
         elif instr_ident == DIV:
-            self.reg[self.ram[regs_from_mar[0]]] /= self.reg[self.ram[regs_from_mar[1]]]
+            self.reg[self.ram[regs[0]]] /= self.reg[self.ram[regs[1]]]
             self.pc += mov_pc
             
         elif instr_ident == INC:
-            self.reg[self.ram[regs_from_mar[0]]] += 0b00000001
+            self.reg[self.ram[regs[0]]] += 0b00000001
             self.pc += mov_pc
             
         elif instr_ident == MOD:
-            self.reg[self.ram[regs_from_mar[0]]] %= self.reg[self.ram[regs_from_mar[1]]]
+            self.reg[self.ram[regs[0]]] %= self.reg[self.ram[regs[1]]]
             self.pc += mov_pc
             
         elif instr_ident == MUL:
-            self.reg[self.ram[regs_from_mar[0]]] *= self.reg[self.ram[regs_from_mar[1]]]
+            self.reg[self.ram[regs[0]]] *= self.reg[self.ram[regs[1]]]
             self.pc += mov_pc
             
         elif instr_ident == NOT:
             xor_mask = 0b11111111
-            self.reg[self.ram[regs_from_mar[0]]] = self.reg[self.ram[regs_from_mar[0]]] ^ xor_mask
+            self.reg[self.ram[regs[0]]] = self.reg[self.ram[regs[0]]] ^ xor_mask
             self.pc += mov_pc
             
         elif instr_ident == OR:
-            self.reg[self.ram[regs_from_mar[0]]] |= self.reg[self.ram[regs_from_mar[1]]]
+            self.reg[self.ram[regs[0]]] |= self.reg[self.ram[regs[1]]]
             self.pc += mov_pc
             
         elif instr_ident == SHL:
-            self.reg[self.ram[regs_from_mar[0]]] <<= self.reg[self.ram[regs_from_mar[1]]]
+            self.reg[self.ram[regs[0]]] <<= self.reg[self.ram[regs[1]]]
             self.pc += mov_pc
             
         elif instr_ident == SHR:
-            self.reg[self.ram[regs_from_mar[0]]] >>= self.reg[self.ram[regs_from_mar[1]]]
+            self.reg[self.ram[regs[0]]] >>= self.reg[self.ram[regs[1]]]
             self.pc += mov_pc
             
         elif instr_ident == SUB:
-            self.reg[self.ram[regs_from_mar[0]]] -= self.reg[self.ram[regs_from_mar[1]]]
+            self.reg[self.ram[regs[0]]] -= self.reg[self.ram[regs[1]]]
             self.pc += mov_pc
             
         elif instr_ident == XOR:
-            self.reg[self.ram[regs_from_mar[0]]] ^= self.reg[self.ram[regs_from_mar[1]]]
+            self.reg[self.ram[regs[0]]] ^= self.reg[self.ram[regs[1]]]
             self.pc += mov_pc
             
         else:
@@ -174,7 +164,7 @@ class CPU:
         """
         self.ram[mar] = mdr
         
-    def parse_instructions(self, filename):
+    def parse_instructions(filename):
         """
         Accepts a file name and parses it to gather the
         binary program instruction set as an array of 8bit
