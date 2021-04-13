@@ -97,7 +97,7 @@ class CPU:
                 for line in file.read().splitlines():
                     parsed.append([s for s in line.split(" ") if re.match(regex_match, s)])
 
-            program = [bin(int(i[0], 2)) for i in parsed if i]
+            program = [int(i[0], 2) for i in parsed if i]
             
         except FileNotFoundError:
             print("No such file... Exiting...")
