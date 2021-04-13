@@ -8,27 +8,40 @@ class CPU:
     def __init__(self):
         """Construct a new CPU."""
         self.ram = [0] * 256
-        self.reg = ([0] * 8)
+        self.reg = [0] * 8
         self.reg[7] = 0xF4
         self.pc = 0
         self.fl = 0
 
-    def load(self):
+    def load(self, program_file=None):
         """Load a program into memory."""
 
         address = 0
 
         # For now, we've just hardcoded a program:
+        if program_file is not None:
+            try:
+                with open(program_file, 'r') as file:
+                    instruction_file = file.read().splitlines()
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+                print(instruction_file)
+                # program = [line for line in instruction_file.split(" ") if len(line) == 8]
+                # print(program)
+                
+            except FileNotFoundError:
+                print("No such file... Exiting...")
+                sys.exit(1)
+        
+        else:
+            program = [
+                # From print8.ls8
+                0b10000010, # LDI R0,8
+                0b00000000,
+                0b00001000,
+                0b01000111, # PRN R0
+                0b00000000,
+                0b00000001, # HLT
+            ]
 
         for instruction in program:
             self.ram_write(instruction, address)
