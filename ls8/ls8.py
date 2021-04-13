@@ -9,11 +9,12 @@ cpu = CPU()
 
 if len(sys.argv) == 1:
     print("You have not provided a program file as argument")
-    print("Running the hardcoded print8.ls8 program")
-    cpu.load()
+    print(f"Usage: python3 {os.path.basename(__file__)} <path to instruction set file>")
+    sys.exit(1)
   
 elif len(sys.argv) > 2:
     print("Too many arguments provided")
+    print(f"Usage: python3 {os.path.basename(__file__)} <path to instruction set file>")
     sys.exit(1)
   
 elif len(sys.argv) == 2:
@@ -21,7 +22,7 @@ elif len(sys.argv) == 2:
     cpu.load(filename)
 
 else:
-    print("Running the hardcoded print8.ls8 program")
-    cpu.load()
+    print(f"Usage: python3 {os.path.basename(__file__)} <path to instruction set file>")
+    sys.exit(1)
   
 cpu.run()

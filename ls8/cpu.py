@@ -2,6 +2,7 @@
 
 import sys
 import re
+import os
 class CPU:
     """Main CPU class."""
 
@@ -23,15 +24,17 @@ class CPU:
             program = self.parse_instructions(program_file)
         
         else:
-            program = [
-                # From print8.ls8
-                0b10000010, # LDI R0,8
-                0b00000000,
-                0b00001000,
-                0b01000111, # PRN R0
-                0b00000000,
-                0b00000001, # HLT
-            ]
+            # program = [
+            #     # From print8.ls8
+            #     0b10000010, # LDI R0,8
+            #     0b00000000,
+            #     0b00001000,
+            #     0b01000111, # PRN R0
+            #     0b00000000,
+            #     0b00000001, # HLT
+            # ]
+            print(f"Usage: python3 {os.path.basename(__file__)} <path to instruction set file>")
+            sys.exit(1)
 
         for instruction in program:
             self.ram_write(instruction, address)
@@ -39,12 +42,58 @@ class CPU:
             address += 1
 
 
-    def alu(self, op, reg_a, reg_b):
+    def alu(self, mov_pc, instr_ident):
         """ALU operations."""
+        regs_from_mar = []
+        
+        for i in range(self.pc + 1, self.pc + mov_pc):
+            regs_from_mar.append(i)
+            
+        ADD = 0b00000000
+        AND = 0b00001000
+        CMP = 0b00000111
+        DEC = 0b00000110
+        DIV = 0b00000011
+        INC = 0b00000101
+        MOD = 0b00000100
+        MUL = 0b00000010
+        NOT = 0b00001001
+        OR  = 0b00001010
+        SHL = 0b00001100
+        SHR = 0b00001101
+        SUB = 0b00000001
+        XOR = 0b00001011
+        
+        # Maybe I will choose to decode these in this function
+        # instead of passing the decoded parts in in a future
+        # iteration
+        # ADD = 0b10100000
+        # AND = 0b10101000
+        # CMP = 0b10100111
+        # DEC = 0b01100110
+        # DIV = 0b10100011
+        # INC = 0b01100101
+        # MOD = 0b10100100
+        # MUL = 0b10100010
+        # NOT = 0b01101001
+        # OR  = 0b10101010
+        # SHL = 0b10101100
+        # SHR = 0b10101101
+        # SUB = 0b10100001
+        # XOR = 0b10101011
 
-        if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
+        if instr_ident == ADD:
+            self.reg[self.ram[regs_from_mar[0]]] += self.reg[self.ram[regs_from_mar[1]]]
+            self.pc += mov_pc
+        elif instr_ident == SUB:
+            self.reg[self.ram[regs_from_mar[0]]] -= self.reg[self.ram[regs_from_mar[1]]]
+            self.pc += mov_pc
+        elif instr_ident == MUL:
+            self.reg[self.ram[regs_from_mar[0]]] *= self.reg[self.ram[regs_from_mar[1]]]
+            self.pc += mov_pc
+        elif instr_ident == DIV:
+            self.reg[self.ram[regs_from_mar[0]]] /= self.reg[self.ram[regs_from_mar[1]]]
+            self.pc += mov_pc
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -101,20 +150,20 @@ class CPU:
             
         except FileNotFoundError:
             print("No such file... Exiting...")
-            sys.exit(1)
+            sys.exit(2)
             
-        if len(program) > 0:
-            return program
-        else:
-            return [
-                # From print8.ls8
-                0b10000010, # LDI R0,8
-                0b00000000,
-                0b00001000,
-                0b01000111, # PRN R0
-                0b00000000,
-                0b00000001, # HLT
-            ]
+        return program
+    
+    def decode_instr(self, instr):
+        mov_pc_mask = 0b00000011
+        first_bit_instruction_mask = 0b00000001
+        instr_ident_mask = 0b00001111
+        is_alu = ((instr >> 5) & first_bit_instruction_mask)
+        sets_pc = ((instr >> 4) & first_bit_instruction_mask)
+        mov_pc = ((instr >> 6) & mov_pc_mask) + 1
+        instr_ident = (instr & instr_ident_mask)
+        
+        return is_alu, sets_pc, mov_pc, instr_ident
                 
     def run(self):
         """Run the CPU."""
@@ -122,31 +171,35 @@ class CPU:
         running = True
         
         # Instruction cases
-        LDI = 0b10000010
-        PRN = 0b01000111
+        LDI = 0b00000010
+        PRN = 0b00000111
         HLT = 0b00000001
         
         while running:
             # Fetch the next instruction and store in
             # in the Instruction Register
             ir = self.ram_read(self.pc)
+            is_alu, sets_pc, mov_pc, instr_ident = self.decode_instr(ir)
             
             # Decode the instruction
-            if ir == HLT:
+            if instr_ident == HLT:
                 running = False
                 sys.exit(0)
+            
+            elif is_alu:
+                self.alu(mov_pc, instr_ident)
 
-            elif ir == LDI:
+            elif instr_ident == LDI:
                 mar = self.ram_read(self.pc + 1)
                 mdr = self.ram_read(self.pc + 2)
                 self.reg[mar] = mdr
-                self.pc += 3
+                self.pc += mov_pc
                 
-            elif ir == PRN:
+            elif instr_ident == PRN:
                 mar = self.ram_read(self.pc + 1)
                 print(self.reg[mar])
-                self.pc += 2
-                
+                self.pc += mov_pc
+            
             else:
                 print("Invalid instruction... Exiting...")
                 running = False
