@@ -1,7 +1,7 @@
 """CPU functionality."""
 
 import sys
-
+import re
 class CPU:
     """Main CPU class."""
 
@@ -20,17 +20,7 @@ class CPU:
 
         # For now, we've just hardcoded a program:
         if program_file is not None:
-            try:
-                with open(program_file, 'r') as file:
-                    instruction_file = file.read().splitlines()
-
-                print(instruction_file)
-                # program = [line for line in instruction_file.split(" ") if len(line) == 8]
-                # print(program)
-                
-            except FileNotFoundError:
-                print("No such file... Exiting...")
-                sys.exit(1)
+            program = self.parse_instructions(program_file)
         
         else:
             program = [
@@ -43,6 +33,7 @@ class CPU:
                 0b00000001, # HLT
             ]
 
+        print(program)
         for instruction in program:
             self.ram_write(instruction, address)
             # self.ram[address] = instruction
@@ -92,7 +83,40 @@ class CPU:
         the MAR in memory.
         """
         self.ram[mar] = mdr
+        
+    def parse_instructions(self, filename):
+        """
+        Accepts a file name and parses it to gather the
+        binary program instruction set as an array of 8bit
+        binary literals.
+        """
+        parsed = []
+        regex_match = '[0-1]{8}'
+        
+        try:
+            with open(filename, 'r') as file:
+                for line in file.read().splitlines():
+                    parsed.append([s for s in line.split(" ") if re.match(regex_match, s)])
 
+            program = [i[0] for i in parsed if i]
+            
+        except FileNotFoundError:
+            print("No such file... Exiting...")
+            sys.exit(1)
+            
+        if len(program) > 0:
+            return program
+        else:
+            return [
+                # From print8.ls8
+                0b10000010, # LDI R0,8
+                0b00000000,
+                0b00001000,
+                0b01000111, # PRN R0
+                0b00000000,
+                0b00000001, # HLT
+            ]
+                
     def run(self):
         """Run the CPU."""
         ir = None
