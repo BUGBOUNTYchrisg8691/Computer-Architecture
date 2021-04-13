@@ -33,7 +33,6 @@ class CPU:
                 0b00000001, # HLT
             ]
 
-        print(program)
         for instruction in program:
             self.ram_write(instruction, address)
             # self.ram[address] = instruction
@@ -98,7 +97,7 @@ class CPU:
                 for line in file.read().splitlines():
                     parsed.append([s for s in line.split(" ") if re.match(regex_match, s)])
 
-            program = [i[0] for i in parsed if i]
+            program = [bin(int(i[0], 2)) for i in parsed if i]
             
         except FileNotFoundError:
             print("No such file... Exiting...")
