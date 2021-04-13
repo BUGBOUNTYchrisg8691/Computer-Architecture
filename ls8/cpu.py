@@ -48,21 +48,22 @@ class CPU:
         
         for i in range(self.pc + 1, self.pc + mov_pc):
             regs_from_mar.append(i)
-            
-        ADD = 0b00000000
-        AND = 0b00001000
-        CMP = 0b00000111
-        DEC = 0b00000110
-        DIV = 0b00000011
-        INC = 0b00000101
-        MOD = 0b00000100
-        MUL = 0b00000010
-        NOT = 0b00001001
-        OR  = 0b00001010
-        SHL = 0b00001100
-        SHR = 0b00001101
-        SUB = 0b00000001
-        XOR = 0b00001011
+        
+        # Instruction Identifiers
+        ADD = 0b0000
+        AND = 0b1000
+        CMP = 0b0111
+        DEC = 0b0110
+        DIV = 0b0011
+        INC = 0b0101
+        MOD = 0b0100
+        MUL = 0b0010
+        NOT = 0b1001
+        OR  = 0b1010
+        SHL = 0b1100
+        SHR = 0b1101
+        SUB = 0b0001
+        XOR = 0b1011
         
         # Maybe I will choose to decode these in this function
         # instead of passing the decoded parts in in a future
@@ -85,15 +86,56 @@ class CPU:
         if instr_ident == ADD:
             self.reg[self.ram[regs_from_mar[0]]] += self.reg[self.ram[regs_from_mar[1]]]
             self.pc += mov_pc
-        elif instr_ident == SUB:
-            self.reg[self.ram[regs_from_mar[0]]] -= self.reg[self.ram[regs_from_mar[1]]]
+            
+        elif instr_ident == AND:
+            self.reg[self.ram[regs_from_mar[0]]] &= self.reg[self.ram[regs_from_mar[1]]]
             self.pc += mov_pc
-        elif instr_ident == MUL:
-            self.reg[self.ram[regs_from_mar[0]]] *= self.reg[self.ram[regs_from_mar[1]]]
+            
+        elif instr_ident == DEC:
+            self.reg[self.ram[regs_from_mar[0]]] -= 0b00000001
             self.pc += mov_pc
+            
         elif instr_ident == DIV:
             self.reg[self.ram[regs_from_mar[0]]] /= self.reg[self.ram[regs_from_mar[1]]]
             self.pc += mov_pc
+            
+        elif instr_ident == INC:
+            self.reg[self.ram[regs_from_mar[0]]] += 0b00000001
+            self.pc += mov_pc
+            
+        elif instr_ident == MOD:
+            self.reg[self.ram[regs_from_mar[0]]] %= self.reg[self.ram[regs_from_mar[1]]]
+            self.pc += mov_pc
+            
+        elif instr_ident == MUL:
+            self.reg[self.ram[regs_from_mar[0]]] *= self.reg[self.ram[regs_from_mar[1]]]
+            self.pc += mov_pc
+            
+        elif instr_ident == NOT:
+            xor_mask = 0b11111111
+            self.reg[self.ram[regs_from_mar[0]]] = self.reg[self.ram[regs_from_mar[0]]] ^ xor_mask
+            self.pc += mov_pc
+            
+        elif instr_ident == OR:
+            self.reg[self.ram[regs_from_mar[0]]] |= self.reg[self.ram[regs_from_mar[1]]]
+            self.pc += mov_pc
+            
+        elif instr_ident == SHL:
+            self.reg[self.ram[regs_from_mar[0]]] <<= self.reg[self.ram[regs_from_mar[1]]]
+            self.pc += mov_pc
+            
+        elif instr_ident == SHR:
+            self.reg[self.ram[regs_from_mar[0]]] >>= self.reg[self.ram[regs_from_mar[1]]]
+            self.pc += mov_pc
+            
+        elif instr_ident == SUB:
+            self.reg[self.ram[regs_from_mar[0]]] -= self.reg[self.ram[regs_from_mar[1]]]
+            self.pc += mov_pc
+            
+        elif instr_ident == XOR:
+            self.reg[self.ram[regs_from_mar[0]]] ^= self.reg[self.ram[regs_from_mar[1]]]
+            self.pc += mov_pc
+            
         else:
             raise Exception("Unsupported ALU operation")
 
