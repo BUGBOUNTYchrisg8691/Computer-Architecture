@@ -3,6 +3,8 @@
 import sys
 import re
 import os
+
+from stack import Stack
 class CPU:
     """Main CPU class."""
 
@@ -12,7 +14,9 @@ class CPU:
         self.reg = [0] * 8
         self.reg[7] = 0xF4
         self.pc = 0
-        self.fl = 0
+        self.fl = [0] * 8
+        self.ie = [0] * 8
+        self.stack = Stack()
 
     def load(self, program_file=None):
         """Load a program into memory."""
@@ -137,8 +141,8 @@ class CPU:
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
             self.pc,
-            #self.fl,
-            #self.ie,
+            self.fl,
+            self.ie,
             self.ram_read(self.pc),
             self.ram_read(self.pc + 1),
             self.ram_read(self.pc + 2)
@@ -164,7 +168,7 @@ class CPU:
         """
         self.ram[mar] = mdr
         
-    def parse_instructions(filename):
+    def parse_instructions(self, filename):
         """
         Accepts a file name and parses it to gather the
         binary program instruction set as an array of 8bit
@@ -203,9 +207,9 @@ class CPU:
         running = True
         
         # Instruction cases
-        LDI = 0b00000010
-        PRN = 0b00000111
-        HLT = 0b00000001
+        LDI = 0b0010
+        PRN = 0b0111
+        HLT = 0b0001
         
         while running:
             # Fetch the next instruction and store in
