@@ -4,7 +4,6 @@ import sys
 import re
 import os
 
-from stack import Stack
 class CPU:
     """Main CPU class."""
 
@@ -16,7 +15,8 @@ class CPU:
         self.pc = 0
         self.fl = [0] * 8
         self.ie = [0] * 8
-        self.stack = Stack()
+        self.stack = []
+        self.sp = self.reg[7]
 
     def load(self, program_file=None):
         """Load a program into memory."""
@@ -207,9 +207,11 @@ class CPU:
         running = True
         
         # Instruction cases
-        LDI = 0b0010
-        PRN = 0b0111
-        HLT = 0b0001
+        LDI  = 0b0010
+        PRN  = 0b0111
+        HLT  = 0b0001
+        PUSH = 0b0101
+        POP  = 0b0110
         
         while running:
             # Fetch the next instruction and store in
@@ -226,16 +228,29 @@ class CPU:
                 self.alu(mov_pc, instr_ident)
 
             elif instr_ident == LDI:
-                mar = self.ram_read(self.pc + 1)
-                mdr = self.ram_read(self.pc + 2)
-                self.reg[mar] = mdr
+                reg_idx = self.ram_read(self.pc + 1)
+                val = self.ram_read(self.pc + 2)
+                self.reg[reg_idx] = val
                 self.pc += mov_pc
                 
             elif instr_ident == PRN:
-                mar = self.ram_read(self.pc + 1)
-                print(self.reg[mar])
+                reg_idx = self.ram_read(self.pc + 1)
+                print(self.reg[reg_idx])
                 self.pc += mov_pc
-            
+
+            elif instr_ident == PUSH:
+                reg_idx = self.ram_read(self.pc + 1)
+                val = self.reg[reg_idx]
+                self.reg[self.sp] -= 1
+                self.ram_write(self.reg[self.sp], val)
+                self.pc += mov_pc
+
+            elif instr_ident == POP:
+                reg_idx = self.ram_read(self.pc + 1)
+                self.reg[reg_idx] = self.ram_read(self.reg[self.sp])
+                self.reg[self.sp] += 1
+                self.pc += mov_pc
+
             else:
                 print("Invalid instruction... Exiting...")
                 running = False
