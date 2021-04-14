@@ -13,8 +13,8 @@ class CPU:
         self.reg = [0] * 8
         self.reg[7] = 0xF4
         self.pc = 0
-        self.fl = [0] * 8
-        self.ie = [0] * 8
+        self.fl = 0
+        self.ie = 0
         self.stack = []
         self.sp = self.reg[7]
 
@@ -139,7 +139,7 @@ class CPU:
         from run() if you need help debugging.
         """
 
-        print(f"TRACE: %02X | %02X %02X %02X |" % (
+        print(f"TRACE: %02X %02X %02X | %02X %02X %02X |" % (
             self.pc,
             self.fl,
             self.ie,
@@ -214,6 +214,7 @@ class CPU:
         POP  = 0b0110
         
         while running:
+            # self.trace()
             # Fetch the next instruction and store in
             # in the Instruction Register
             ir = self.ram_read(self.pc)
@@ -241,14 +242,14 @@ class CPU:
             elif instr_ident == PUSH:
                 reg_idx = self.ram_read(self.pc + 1)
                 val = self.reg[reg_idx]
-                self.reg[self.sp] -= 1
-                self.ram_write(self.reg[self.sp], val)
+                self.sp -= 1
+                self.ram_write(val, self.sp)
                 self.pc += mov_pc
 
             elif instr_ident == POP:
                 reg_idx = self.ram_read(self.pc + 1)
-                self.reg[reg_idx] = self.ram_read(self.reg[self.sp])
-                self.reg[self.sp] += 1
+                self.reg[reg_idx] = self.ram_read(self.sp)
+                self.sp += 1
                 self.pc += mov_pc
 
             else:
