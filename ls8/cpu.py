@@ -12,11 +12,12 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.reg[7] = 0xF4
-        self.pc = 0
-        self.fl = 0
-        self.ie = 0
-        self.stack = []
-        self.sp = self.reg[7]
+        self.PC = 0
+        self.FL = 0
+        self.IE = 0
+        self.IM = self.reg[5]
+        self.IS = self.reg[6]
+        self.SP = self.reg[7]
 
     def load(self, program_file=None):
         """Load a program into memory."""
@@ -40,7 +41,7 @@ class CPU:
         """ALU operations."""
         regs= []
         
-        for i in range(self.pc + 1, self.pc + mov_pc):
+        for i in range(self.PC + 1, self.PC + mov_pc):
             regs.append(i)
         
         # Instruction Identifiers
@@ -79,56 +80,56 @@ class CPU:
 
         if instr_ident == ADD:
             self.reg[self.ram[regs[0]]] += self.reg[self.ram[regs[1]]]
-            self.pc += mov_pc
+            self.PC += mov_pc
             
         elif instr_ident == AND:
             self.reg[self.ram[regs[0]]] &= self.reg[self.ram[regs[1]]]
-            self.pc += mov_pc
+            self.PC += mov_pc
             
         elif instr_ident == DEC:
             self.reg[self.ram[regs[0]]] -= 0b00000001
-            self.pc += mov_pc
+            self.PC += mov_pc
             
         elif instr_ident == DIV:
             self.reg[self.ram[regs[0]]] /= self.reg[self.ram[regs[1]]]
-            self.pc += mov_pc
+            self.PC += mov_pc
             
         elif instr_ident == INC:
             self.reg[self.ram[regs[0]]] += 0b00000001
-            self.pc += mov_pc
+            self.PC += mov_pc
             
         elif instr_ident == MOD:
             self.reg[self.ram[regs[0]]] %= self.reg[self.ram[regs[1]]]
-            self.pc += mov_pc
+            self.PC += mov_pc
             
         elif instr_ident == MUL:
             self.reg[self.ram[regs[0]]] *= self.reg[self.ram[regs[1]]]
-            self.pc += mov_pc
+            self.PC += mov_pc
             
         elif instr_ident == NOT:
             xor_mask = 0b11111111
             self.reg[self.ram[regs[0]]] = self.reg[self.ram[regs[0]]] ^ xor_mask
-            self.pc += mov_pc
+            self.PC += mov_pc
             
         elif instr_ident == OR:
             self.reg[self.ram[regs[0]]] |= self.reg[self.ram[regs[1]]]
-            self.pc += mov_pc
+            self.PC += mov_pc
             
         elif instr_ident == SHL:
             self.reg[self.ram[regs[0]]] <<= self.reg[self.ram[regs[1]]]
-            self.pc += mov_pc
+            self.PC += mov_pc
             
         elif instr_ident == SHR:
             self.reg[self.ram[regs[0]]] >>= self.reg[self.ram[regs[1]]]
-            self.pc += mov_pc
+            self.PC += mov_pc
             
         elif instr_ident == SUB:
             self.reg[self.ram[regs[0]]] -= self.reg[self.ram[regs[1]]]
-            self.pc += mov_pc
+            self.PC += mov_pc
             
         elif instr_ident == XOR:
             self.reg[self.ram[regs[0]]] ^= self.reg[self.ram[regs[1]]]
-            self.pc += mov_pc
+            self.PC += mov_pc
             
         else:
             raise Exception("Unsupported ALU operation")
@@ -140,12 +141,12 @@ class CPU:
         """
 
         print(f"TRACE: %02X %02X %02X | %02X %02X %02X |" % (
-            self.pc,
-            self.fl,
-            self.ie,
-            self.ram_read(self.pc),
-            self.ram_read(self.pc + 1),
-            self.ram_read(self.pc + 2)
+            self.PC,
+            self.FL,
+            self.IE,
+            self.ram_read(self.PC),
+            self.ram_read(self.PC + 1),
+            self.ram_read(self.PC + 2)
         ), end='')
 
         for i in range(8):
@@ -214,13 +215,14 @@ class CPU:
         POP  = 0b0110
         CALL = 0b0000
         RET  = 0b0001
+        ST   = 0b0100
 
         
         while running:
             # self.trace()
             # Fetch the next instruction and store in
             # in the Instruction Register
-            ir = self.ram_read(self.pc)
+            ir = self.ram_read(self.PC)
             # Decode the instruction
             is_alu, sets_pc, mov_pc, instr_ident = self.decode_instr(ir)
 
@@ -228,14 +230,14 @@ class CPU:
             # and then run logic per that instruction
             if sets_pc:
                 if instr_ident == CALL:
-                    self.sp -= 1
-                    self.ram_write(self.pc + mov_pc, self.sp)
-                    reg_idx = self.ram_read(self.pc + 1)
-                    self.pc = self.reg[reg_idx]
+                    self.SP -= 1
+                    self.ram_write(self.PC + mov_pc, self.SP)
+                    reg_idx = self.ram_read(self.PC + 1)
+                    self.PC = self.reg[reg_idx]
 
                 elif instr_ident == RET:
-                    self.pc = self.ram_read(self.sp)
-                    self.sp += 1
+                    self.PC = self.ram_read(self.SP)
+                    self.SP += 1
 
             elif is_alu:
                 self.alu(mov_pc, instr_ident)
@@ -245,28 +247,34 @@ class CPU:
                 sys.exit(0)
 
             elif instr_ident == LDI:
-                reg_idx = self.ram_read(self.pc + 1)
-                val = self.ram_read(self.pc + 2)
+                reg_idx = self.ram_read(self.PC + 1)
+                val = self.ram_read(self.PC + 2)
                 self.reg[reg_idx] = val
-                self.pc += mov_pc
+                self.PC += mov_pc
                 
             elif instr_ident == PRN:
-                reg_idx = self.ram_read(self.pc + 1)
+                reg_idx = self.ram_read(self.PC + 1)
                 print(self.reg[reg_idx])
-                self.pc += mov_pc
+                self.PC += mov_pc
 
             elif instr_ident == PUSH:
-                reg_idx = self.ram_read(self.pc + 1)
+                reg_idx = self.ram_read(self.PC + 1)
                 val = self.reg[reg_idx]
-                self.sp -= 1
-                self.ram_write(val, self.sp)
-                self.pc += mov_pc
+                self.SP -= 1
+                self.ram_write(val, self.SP)
+                self.PC += mov_pc
 
             elif instr_ident == POP:
-                reg_idx = self.ram_read(self.pc + 1)
-                self.reg[reg_idx] = self.ram_read(self.sp)
-                self.sp += 1
-                self.pc += mov_pc
+                reg_idx = self.ram_read(self.PC + 1)
+                self.reg[reg_idx] = self.ram_read(self.SP)
+                self.SP += 1
+                self.PC += mov_pc
+
+            elif instr_ident == ST:
+                reg_idx_a = self.ram_read(self.PC + 1)
+                reg_idx_b = self.ram_read(self.PC + 2)
+                self.reg[reg_idx_a] = self.reg[reg_idx_b]
+                self.PC += mov_pc
 
             else:
                 print("Invalid instruction... Exiting...")
