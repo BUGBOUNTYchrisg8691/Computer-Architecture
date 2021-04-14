@@ -212,21 +212,37 @@ class CPU:
         HLT  = 0b0001
         PUSH = 0b0101
         POP  = 0b0110
+        CALL = 0b0000
+        RET  = 0b0001
+
         
         while running:
             # self.trace()
             # Fetch the next instruction and store in
             # in the Instruction Register
             ir = self.ram_read(self.pc)
-            is_alu, sets_pc, mov_pc, instr_ident = self.decode_instr(ir)
-            
             # Decode the instruction
-            if instr_ident == HLT:
-                running = False
-                sys.exit(0)
-            
+            is_alu, sets_pc, mov_pc, instr_ident = self.decode_instr(ir)
+
+            # Check alu flag, sets pc flag and then instruction identity flag
+            # and then run logic per that instruction
+            if sets_pc:
+                if instr_ident == CALL:
+                    self.sp -= 1
+                    self.ram_write(self.pc + mov_pc, self.sp)
+                    reg_idx = self.ram_read(self.pc + 1)
+                    self.pc = self.reg[reg_idx]
+
+                elif instr_ident == RET:
+                    self.pc = self.ram_read(self.sp)
+                    self.sp += 1
+
             elif is_alu:
                 self.alu(mov_pc, instr_ident)
+
+            elif instr_ident == HLT:
+                running = False
+                sys.exit(0)
 
             elif instr_ident == LDI:
                 reg_idx = self.ram_read(self.pc + 1)
