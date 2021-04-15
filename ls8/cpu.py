@@ -3,6 +3,7 @@
 import sys
 import re
 import os
+from interrupt_timer import InterruptTimer
 
 class CPU:
     """Main CPU class."""
@@ -243,29 +244,77 @@ class CPU:
         ir = None
         running = True
 
+        # InterruptTimer initialization
+        it = InterruptTimer(1, self.set_IS_bit)
+        it.start()
+
         # Instruction cases
-        LDI  = 0b0010
-        PRN  = 0b0111
         HLT  = 0b0001
-        PUSH = 0b0101
+        LDI  = 0b0010
         POP  = 0b0110
-        ST   = 0b0100
         PRA  = 0b1000
+        PRN  = 0b0111
+        PUSH = 0b0101
+        ST   = 0b0100
 
         # instructions that set pc manually
         CALL = 0b0000
-        RET  = 0b0001
+        INT  = 0b0010
+        IRET = 0b0011
         JMP  = 0b0100
+        RET  = 0b0001
 
         while running:
+            # trace for debugging
             # self.trace()
+
+            # interrupt check
+            if self.IS:
+                masked_interrupts = self.IM & self.IS
+
+                # check all 8 bits of the IS register
+                for i in range(8):
+                    interrupt_occurred = ((masked_interrupts >> i) & 1) == 1
+
+                    if interrupt_occurred:
+                        # if interrupt occurred, disable further interrupts
+                        it.stop()
+
+                        # clear IS register
+                        self.IS = 0b0
+
+                        # push PC reg, FL reg, and R0 through R6 onto stack
+                        # in that order
+                        self.SP -= 1
+                        self.ram_write(self.PC, self.SP)
+                        self.SP -= 1
+                        self.ram_write(self.FL, self.SP)
+                        self.SP -= 1
+                        self.ram_write(self.reg[0], self.SP)
+                        self.SP -= 1
+                        self.ram_write(self.reg[1], self.SP)
+                        self.SP -= 1
+                        self.ram_write(self.reg[2], self.SP)
+                        self.SP -= 1
+                        self.ram_write(self.reg[3], self.SP)
+                        self.SP -= 1
+                        self.ram_write(self.reg[4], self.SP)
+                        self.SP -= 1
+                        self.ram_write(self.reg[5], self.SP)
+                        self.SP -= 1
+                        self.ram_write(self.reg[6], self.SP)
+
+                        # PC is set to vector from interrupt vector table
+                        self.PC = self.ram_read(self.I0)
+
             # Fetch the next instruction and store in
             # in the Instruction Register
             ir = self.ram_read(self.PC)
+
             # Decode the instruction
             is_alu, sets_pc, mov_pc, instr_ident = self.decode_instr(ir)
 
-            # Check alu flag, sets pc flag and then instruction identity flag
+            # Checks sets_pc bit and then instruction identity bits
             # and then run logic per that instruction
             if sets_pc:
                 if instr_ident == CALL:
@@ -273,6 +322,34 @@ class CPU:
                     self.ram_write(self.PC + mov_pc, self.SP)
                     reg_idx = self.ram_read(self.PC + 1)
                     self.PC = self.reg[reg_idx]
+
+                elif instr_ident == IRET:
+                    # Pop R6 through R0 and put them back in the registers
+                    self.reg[6] = self.ram_read(self.SP)
+                    self.SP += 1
+                    self.reg[5] = self.ram_read(self.SP)
+                    self.SP += 1
+                    self.reg[4] = self.ram_read(self.SP)
+                    self.SP += 1
+                    self.reg[3] = self.ram_read(self.SP)
+                    self.SP += 1
+                    self.reg[2] = self.ram_read(self.SP)
+                    self.SP += 1
+                    self.reg[1] = self.ram_read(self.SP)
+                    self.SP += 1
+                    self.reg[0] = self.ram_read(self.SP)
+                    self.SP += 1
+
+                    # Pop FL off the stack
+                    self.FL = self.ram_read(self.SP)
+                    self.SP += 1
+
+                    # Pop return address off stack and set to PC reg
+                    self.PC = self.ram_read(self.SP)
+                    self.SP += 1
+
+                    # Re-enable interrupts
+                    it.start()
 
                 elif instr_ident == JMP:
                     reg_idx = self.ram_read(self.PC + 1)
@@ -282,10 +359,13 @@ class CPU:
                     self.PC = self.ram_read(self.SP)
                     self.SP += 1
 
+            # Checks is_alu bit then sends the mov_pc bits and
+            # instruction identifier bits to the alu method
             elif is_alu:
                 self.alu(mov_pc, instr_ident)
 
             elif instr_ident == HLT:
+                it.stop()
                 running = False
                 sys.exit(0)
 
@@ -316,7 +396,7 @@ class CPU:
             elif instr_ident == ST:
                 reg_idx_a = self.ram_read(self.PC + 1)
                 reg_idx_b = self.ram_read(self.PC + 2)
-                self.reg[reg_idx_a] = self.reg[reg_idx_b]
+                self.ram_write(self.reg[reg_idx_b], self.reg[reg_idx_a])
                 self.PC += mov_pc
 
             elif instr_ident == PRA:
@@ -326,5 +406,6 @@ class CPU:
 
             else:
                 print("Invalid instruction... Exiting...")
+                it.stop()
                 running = False
                 sys.exit(1)
