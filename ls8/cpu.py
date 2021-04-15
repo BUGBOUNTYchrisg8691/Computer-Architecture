@@ -3,7 +3,6 @@
 import sys
 import re
 import os
-from interrupt_timer import InterruptTimer as IT
 
 class CPU:
     """Main CPU class."""
@@ -51,7 +50,7 @@ class CPU:
         # For now, we've just hardcoded a program:
         if program_file is not None:
             program = self.parse_instructions(program_file)
-        
+
         else:
             print(f"Usage: python3 {os.path.basename(__file__)} <path to instruction set file>")
             sys.exit(1)
@@ -64,10 +63,10 @@ class CPU:
     def alu(self, mov_pc, instr_ident):
         """ALU operations."""
         regs= []
-        
+
         for i in range(self.PC + 1, self.PC + mov_pc):
             regs.append(i)
-        
+
         # Instruction Identifiers
         ADD = 0b0000
         AND = 0b1000
@@ -83,7 +82,7 @@ class CPU:
         SHR = 0b1101
         SUB = 0b0001
         XOR = 0b1011
-        
+
         # Maybe I will choose to decode these in this function
         # instead of passing the decoded parts in in a future
         # iteration
@@ -105,56 +104,56 @@ class CPU:
         if instr_ident == ADD:
             self.reg[self.ram[regs[0]]] += self.reg[self.ram[regs[1]]]
             self.PC += mov_pc
-            
+
         elif instr_ident == AND:
             self.reg[self.ram[regs[0]]] &= self.reg[self.ram[regs[1]]]
             self.PC += mov_pc
-            
+
         elif instr_ident == DEC:
             self.reg[self.ram[regs[0]]] -= 0b00000001
             self.PC += mov_pc
-            
+
         elif instr_ident == DIV:
             self.reg[self.ram[regs[0]]] /= self.reg[self.ram[regs[1]]]
             self.PC += mov_pc
-            
+
         elif instr_ident == INC:
             self.reg[self.ram[regs[0]]] += 0b00000001
             self.PC += mov_pc
-            
+
         elif instr_ident == MOD:
             self.reg[self.ram[regs[0]]] %= self.reg[self.ram[regs[1]]]
             self.PC += mov_pc
-            
+
         elif instr_ident == MUL:
             self.reg[self.ram[regs[0]]] *= self.reg[self.ram[regs[1]]]
             self.PC += mov_pc
-            
+
         elif instr_ident == NOT:
             xor_mask = 0b11111111
             self.reg[self.ram[regs[0]]] = self.reg[self.ram[regs[0]]] ^ xor_mask
             self.PC += mov_pc
-            
+
         elif instr_ident == OR:
             self.reg[self.ram[regs[0]]] |= self.reg[self.ram[regs[1]]]
             self.PC += mov_pc
-            
+
         elif instr_ident == SHL:
             self.reg[self.ram[regs[0]]] <<= self.reg[self.ram[regs[1]]]
             self.PC += mov_pc
-            
+
         elif instr_ident == SHR:
             self.reg[self.ram[regs[0]]] >>= self.reg[self.ram[regs[1]]]
             self.PC += mov_pc
-            
+
         elif instr_ident == SUB:
             self.reg[self.ram[regs[0]]] -= self.reg[self.ram[regs[1]]]
             self.PC += mov_pc
-            
+
         elif instr_ident == XOR:
             self.reg[self.ram[regs[0]]] ^= self.reg[self.ram[regs[1]]]
             self.PC += mov_pc
-            
+
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -177,22 +176,22 @@ class CPU:
             print(" %02X" % self.reg[i], end='')
 
         print()
-        
+
     def ram_read(self, mar):
         """
-        Accepts a Memory Address Register and returns 
+        Accepts a Memory Address Register and returns
         the Memory Data Register stored there.
         """
         return self.ram[mar]
-    
+
     def ram_write(self, mdr, mar):
         """
-        Accepts a Memory Data Register and 
+        Accepts a Memory Data Register and
         a Memory Address Register and writes the MDR to
         the MAR in memory.
         """
         self.ram[mar] = mdr
-        
+
     def parse_instructions(self, filename):
         """
         Accepts a file name and parses it to gather the
@@ -201,20 +200,20 @@ class CPU:
         """
         parsed = []
         regex_match = '[0-1]{8}'
-        
+
         try:
             with open(filename, 'r') as file:
                 for line in file.read().splitlines():
                     parsed.append([s for s in line.split(" ") if re.match(regex_match, s)])
 
             program = [int(i[0], 2) for i in parsed if i]
-            
+
         except FileNotFoundError:
             print("No such file... Exiting...")
             sys.exit(2)
-            
+
         return program
-    
+
     def decode_instr(self, instr):
         """
         Accepts 8bit intruction byte literal and decodes info
@@ -230,7 +229,7 @@ class CPU:
         sets_pc = ((instr >> 4) & first_bit_instruction_mask)
         mov_pc = ((instr >> 6) & mov_pc_mask) + 1
         instr_ident = (instr & instr_ident_mask)
-        
+
         return is_alu, sets_pc, mov_pc, instr_ident
 
     def set_IS_bit(self):
@@ -238,14 +237,12 @@ class CPU:
         Sets 0 bit of IS every 1 seconds.
         """
         self.IS = 0b1
-                
+
     def run(self):
         """Run the CPU."""
         ir = None
         running = True
-        it = IT(1, self.set_IS_bit)
-        it.start()
-        
+
         # Instruction cases
         LDI  = 0b0010
         PRN  = 0b0111
@@ -261,7 +258,7 @@ class CPU:
         JMP  = 0b0100
 
         while running:
-            self.trace()
+            # self.trace()
             # Fetch the next instruction and store in
             # in the Instruction Register
             ir = self.ram_read(self.PC)
@@ -279,7 +276,7 @@ class CPU:
 
                 elif instr_ident == JMP:
                     reg_idx = self.ram_read(self.PC + 1)
-                    self.pc = self.reg[reg_idx]
+                    self.PC = self.reg[reg_idx]
 
                 elif instr_ident == RET:
                     self.PC = self.ram_read(self.SP)
@@ -290,7 +287,6 @@ class CPU:
 
             elif instr_ident == HLT:
                 running = False
-                it.stop()
                 sys.exit(0)
 
             elif instr_ident == LDI:
@@ -298,7 +294,7 @@ class CPU:
                 val = self.ram_read(self.PC + 2)
                 self.reg[reg_idx] = val
                 self.PC += mov_pc
-                
+
             elif instr_ident == PRN:
                 reg_idx = self.ram_read(self.PC + 1)
                 print(self.reg[reg_idx])
@@ -331,5 +327,4 @@ class CPU:
             else:
                 print("Invalid instruction... Exiting...")
                 running = False
-                it.stop()
                 sys.exit(1)
