@@ -3,7 +3,7 @@
 import sys
 import re
 import os
-import threading as thr
+from interrupt_timer import InterruptTimer as IT
 
 class CPU:
     """Main CPU class."""
@@ -14,13 +14,13 @@ class CPU:
         self.reg = [0] * 8
 
         # Program Counter
-        self.PC = 0
+        self.PC = 0b0
 
         # Flags
         self.FL = 0b00000000
 
         # Not Sure?
-        self.IE = 0
+        self.IE = 0b0
 
         # interrupt Mask
         self.IM = self.reg[5]
@@ -167,7 +167,7 @@ class CPU:
         print(f"TRACE: %02X %02X %02X | %02X %02X %02X |" % (
             self.PC,
             self.FL,
-            self.IE,
+            self.IS,
             self.ram_read(self.PC),
             self.ram_read(self.PC + 1),
             self.ram_read(self.PC + 2)
@@ -216,6 +216,13 @@ class CPU:
         return program
     
     def decode_instr(self, instr):
+        """
+        Accepts 8bit intruction byte literal and decodes info
+        using masks, return is_alu instruction flag, if the
+        instruction sets the program counter manually, the
+        amount the program counter should move and the
+        instruction identifier.
+        """
         mov_pc_mask = 0b00000011
         first_bit_instruction_mask = 0b00000001
         instr_ident_mask = 0b00001111
@@ -226,13 +233,18 @@ class CPU:
         
         return is_alu, sets_pc, mov_pc, instr_ident
 
-    def interrupt_handler(self):
-
+    def set_IS_bit(self):
+        """
+        Sets 0 bit of IS every 1 seconds.
+        """
+        self.IS = 0b1
                 
     def run(self):
         """Run the CPU."""
         ir = None
         running = True
+        it = IT(1, self.set_IS_bit)
+        it.start()
         
         # Instruction cases
         LDI  = 0b0010
@@ -249,7 +261,7 @@ class CPU:
         JMP  = 0b0100
 
         while running:
-            # self.trace()
+            self.trace()
             # Fetch the next instruction and store in
             # in the Instruction Register
             ir = self.ram_read(self.PC)
@@ -278,6 +290,7 @@ class CPU:
 
             elif instr_ident == HLT:
                 running = False
+                it.stop()
                 sys.exit(0)
 
             elif instr_ident == LDI:
@@ -318,4 +331,5 @@ class CPU:
             else:
                 print("Invalid instruction... Exiting...")
                 running = False
+                it.stop()
                 sys.exit(1)
