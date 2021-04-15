@@ -3,6 +3,7 @@
 import sys
 import re
 import os
+import threading as thr
 
 class CPU:
     """Main CPU class."""
@@ -11,13 +12,36 @@ class CPU:
         """Construct a new CPU."""
         self.ram = [0] * 256
         self.reg = [0] * 8
-        self.reg[7] = 0xF4
+
+        # Program Counter
         self.PC = 0
-        self.FL = 0
+
+        # Flags
+        self.FL = 0b00000000
+
+        # Not Sure?
         self.IE = 0
+
+        # interrupt Mask
         self.IM = self.reg[5]
+
+        # Interrupt Status
         self.IS = self.reg[6]
+
+        # Stack Pointer
+        self.reg[7] = 0xF4
         self.SP = self.reg[7]
+
+        # Interrupt Vector Table
+        self.I7 = self.ram[0xff]
+        self.I6 = self.ram[0xfe]
+        self.I5 = self.ram[0xfd]
+        self.I4 = self.ram[0xfc]
+        self.I3 = self.ram[0xfb]
+        self.I2 = self.ram[0xfa]
+        self.I1 = self.ram[0xf9]
+        self.I0 = self.ram[0xf8]
+
 
     def load(self, program_file=None):
         """Load a program into memory."""
@@ -201,6 +225,9 @@ class CPU:
         instr_ident = (instr & instr_ident_mask)
         
         return is_alu, sets_pc, mov_pc, instr_ident
+
+    def interrupt_handler(self):
+
                 
     def run(self):
         """Run the CPU."""
@@ -213,11 +240,14 @@ class CPU:
         HLT  = 0b0001
         PUSH = 0b0101
         POP  = 0b0110
+        ST   = 0b0100
+        PRA  = 0b1000
+
+        # instructions that set pc manually
         CALL = 0b0000
         RET  = 0b0001
-        ST   = 0b0100
+        JMP  = 0b0100
 
-        
         while running:
             # self.trace()
             # Fetch the next instruction and store in
@@ -234,6 +264,10 @@ class CPU:
                     self.ram_write(self.PC + mov_pc, self.SP)
                     reg_idx = self.ram_read(self.PC + 1)
                     self.PC = self.reg[reg_idx]
+
+                elif instr_ident == JMP:
+                    reg_idx = self.ram_read(self.PC + 1)
+                    self.pc = self.reg[reg_idx]
 
                 elif instr_ident == RET:
                     self.PC = self.ram_read(self.SP)
@@ -274,6 +308,11 @@ class CPU:
                 reg_idx_a = self.ram_read(self.PC + 1)
                 reg_idx_b = self.ram_read(self.PC + 2)
                 self.reg[reg_idx_a] = self.reg[reg_idx_b]
+                self.PC += mov_pc
+
+            elif instr_ident == PRA:
+                reg_idx = self.ram_read(self.PC + 1)
+                print(self.reg[reg_idx])
                 self.PC += mov_pc
 
             else:
