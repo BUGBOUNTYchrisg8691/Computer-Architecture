@@ -164,10 +164,10 @@ class CPU:
         from run() if you need help debugging.
         """
 
-        print(f"TRACE: %02X %02X %02X | %02X %02X %02X |" % (
+        print(f"TRACE: PC: %02X | RAM@PC: %02X, RAM@PC+1: %02X, RAM@PC+2: %02X |" % (
             self.PC,
-            self.FL,
-            self.IS,
+            # self.FL,
+            # self.IS,
             self.ram_read(self.PC),
             self.ram_read(self.PC + 1),
             self.ram_read(self.PC + 2)
@@ -266,7 +266,7 @@ class CPU:
 
         while running:
             # trace for debugging
-            # self.trace()
+            self.trace()
 
             # interrupt check
             if self.IS:
@@ -275,6 +275,7 @@ class CPU:
                 # check all 8 bits of the IS register
                 for i in range(8):
                     interrupt_occurred = ((masked_interrupts >> i) & 1) == 1
+                    # print(self.IM, self.IS, masked_interrupts, i, interrupt_occurred)
 
                     if interrupt_occurred:
                         # if interrupt occurred, disable further interrupts
