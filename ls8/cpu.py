@@ -282,6 +282,7 @@ class CPU:
 
         # Instruction cases
         HLT = 0b1
+        LD = 0b11
         LDI = 0b10
         POP = 0b110
         PRA = 0b1000
@@ -416,6 +417,12 @@ class CPU:
                 it.stop()
                 running = False
                 sys.exit(0)
+
+            elif instr_ident == LD:
+                reg_idx_a = self.ram_read(self.PC + 1)
+                reg_idx_b = self.ram_read(self.PC + 2)
+                self.reg[reg_idx_a] = self.ram_read(self.reg[reg_idx_b])
+                self.PC += mov_pc
 
             elif instr_ident == LDI:
                 reg_idx = self.ram_read(self.PC + 1)
