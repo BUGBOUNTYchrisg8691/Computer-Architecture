@@ -5,8 +5,15 @@ name = "pypi"
 
 [packages]
 pygame = "*"
+pynvim = "*"
+neovim = "*"
+jedi = "*"
+isort = "*"
+black = "*"
+flake8 = "*"
 
 [dev-packages]
+pylint = "*"
 
 [requires]
 python_version = "3.9"
