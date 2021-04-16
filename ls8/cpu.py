@@ -22,15 +22,16 @@ class CPU:
         self.FL = 0b0
 
         # Not Sure?
-        self.IE = 0b0
+        # self.IE = 0b0
 
-        # interrupt Mask
+        # interrupt Mask and Status
+        # reg[5]
         self.IM = 0b101
-
-        # Interrupt Status
+        # reg[6]
         self.IS = 0b110
 
         # Stack Pointer
+        # reg[7]
         self.SP = 0b111
         self.reg[self.SP] = 0xF4
 
@@ -241,7 +242,7 @@ class CPU:
 
         return is_alu, sets_pc, mov_pc, instr_ident
 
-    def set_IS_bit(self):
+    def set_IS_reg(self):
         """
         Sets 0 bit of IS every 1 seconds.
         """
@@ -253,8 +254,10 @@ class CPU:
         running = True
 
         # InterruptTimer initialization
-        it = InterruptTimer(1, self.set_IS_bit)
+        it = InterruptTimer(1, self.set_IS_reg)
         it.start()
+
+        # Keyboard Interrupt polling initialization
 
         # Instruction cases
         HLT = 0b1
