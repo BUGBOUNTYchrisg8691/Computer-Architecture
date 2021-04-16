@@ -61,7 +61,8 @@ class CPU:
 
         else:
             print(
-                f"Usage: python3 {os.path.basename(__file__)} <path to instruction set file>"
+                f"Usage: python3 {os.path.basename(__file__)} <path to "
+                "instruction set file>"
             )
             sys.exit(1)
 
@@ -111,11 +112,11 @@ class CPU:
         # XOR = 0b10101011
 
         if instr_ident == ADD:
-            self.reg[self.ram[regs[0]]] += self.reg[self.ram[regs[1]]]
+            self.reg[self.ram_read(regs[0])] += self.reg[self.ram_read(regs[1])]
             self.PC += mov_pc
 
         elif instr_ident == AND:
-            self.reg[self.ram[regs[0]]] &= self.reg[self.ram[regs[1]]]
+            self.reg[self.ram_read(regs[0])] &= self.reg[self.ram_read(regs[1])]
             self.PC += mov_pc
 
         elif instr_ident == CMP:
@@ -140,48 +141,48 @@ class CPU:
             self.PC += mov_pc
 
         elif instr_ident == DEC:
-            self.reg[self.ram[regs[0]]] -= 0b1
+            self.reg[self.ram_read(regs[0])] -= 1
             self.PC += mov_pc
 
         elif instr_ident == DIV:
-            self.reg[self.ram[regs[0]]] /= self.reg[self.ram[regs[1]]]
+            self.reg[self.ram_read(regs[0])] /= self.reg[self.ram_read(regs[1])]
             self.PC += mov_pc
 
         elif instr_ident == INC:
-            self.reg[self.ram[regs[0]]] += 0b1
+            self.reg[self.ram_read(regs[0])] += 1
             self.PC += mov_pc
 
         elif instr_ident == MOD:
-            self.reg[self.ram[regs[0]]] %= self.reg[self.ram[regs[1]]]
+            self.reg[self.ram_read(regs[0])] %= self.reg[self.ram_read(regs[1])]
             self.PC += mov_pc
 
         elif instr_ident == MUL:
-            self.reg[self.ram[regs[0]]] *= self.reg[self.ram[regs[1]]]
+            self.reg[self.ram_read(regs[0])] *= self.reg[self.ram_read(regs[1])]
             self.PC += mov_pc
 
         elif instr_ident == NOT:
             xor_mask = 0b11111111
-            self.reg[self.ram[regs[0]]] = self.reg[self.ram[regs[0]]] ^ xor_mask
+            self.reg[self.ram_read(regs[0])] = self.reg[self.ram_read(regs[0])] ^ xor_mask
             self.PC += mov_pc
 
         elif instr_ident == OR:
-            self.reg[self.ram[regs[0]]] |= self.reg[self.ram[regs[1]]]
+            self.reg[self.ram_read(regs[0])] |= self.reg[self.ram_read(regs[1])]
             self.PC += mov_pc
 
         elif instr_ident == SHL:
-            self.reg[self.ram[regs[0]]] <<= self.reg[self.ram[regs[1]]]
+            self.reg[self.ram_read(regs[0])] <<= self.reg[self.ram_read(regs[1])]
             self.PC += mov_pc
 
         elif instr_ident == SHR:
-            self.reg[self.ram[regs[0]]] >>= self.reg[self.ram[regs[1]]]
+            self.reg[self.ram_read(regs[0])] >>= self.reg[self.ram_read(regs[1])]
             self.PC += mov_pc
 
         elif instr_ident == SUB:
-            self.reg[self.ram[regs[0]]] -= self.reg[self.ram[regs[1]]]
+            self.reg[self.ram_read(regs[0])] -= self.reg[self.ram_read(regs[1])]
             self.PC += mov_pc
 
         elif instr_ident == XOR:
-            self.reg[self.ram[regs[0]]] ^= self.reg[self.ram[regs[1]]]
+            self.reg[self.ram_read(regs[0])] ^= self.reg[self.ram_read(regs[1])]
             self.PC += mov_pc
 
         else:
