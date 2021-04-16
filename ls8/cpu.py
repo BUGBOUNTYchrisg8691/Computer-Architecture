@@ -19,7 +19,7 @@ class CPU:
         self.PC = 0b0
 
         # Flags
-        self.FL = 0b0
+        self.FL = 0b100
 
         # Not Sure?
         # self.IE = 0b0
@@ -112,6 +112,25 @@ class CPU:
         elif instr_ident == AND:
             self.reg[self.ram[regs[0]]] &= self.reg[self.ram[regs[1]]]
             self.PC += mov_pc
+
+        elif instr_ident == CMP:
+            # Set L bit in FL reg
+            if self.reg[self.ram_read(regs[0])] < self.reg[self.ram_read(regs[1])]:
+                self.reg[self.FL] = self.reg[self.FL] | (1 << 2)
+            else:
+                self.reg[self.FL] = self.reg[self.FL] & ~(1 << 2)
+
+            # Set G bit in FL reg
+            if self.reg[self.ram_read(regs[0])] > self.reg[self.ram_read(regs[1])]:
+                self.reg[self.FL] = self.reg[self.FL] | (1 << 1)
+            else:
+                self.reg[self.FL] = self.reg[self.FL] & ~(1 << 1)
+
+            # Set E bit in FL reg
+            if self.reg[self.ram_read(regs[0])] == self.reg[self.ram_read(regs[1])]:
+                self.reg[self.FL] = self.reg[self.FL] | (1 << 0)
+            else:
+                self.reg[self.FL] = self.reg[self.FL] & ~(1 << 0)
 
         elif instr_ident == DEC:
             self.reg[self.ram[regs[0]]] -= 0b1
@@ -272,7 +291,9 @@ class CPU:
         CALL = 0b0
         INT = 0b10
         IRET = 0b11
+        JEQ = 0b101
         JMP = 0b100
+        JNE = 0b110
         RET = 0b1
 
         while running:
@@ -299,7 +320,7 @@ class CPU:
                         self.reg[self.SP] -= 1
                         self.ram_write(self.PC, self.reg[self.SP])
                         self.reg[self.SP] -= 1
-                        self.ram_write(self.FL, self.reg[self.SP])
+                        self.ram_write(self.reg[self.FL], self.reg[self.SP])
                         self.reg[self.SP] -= 1
                         self.ram_write(self.reg[0], self.reg[self.SP])
                         self.reg[self.SP] -= 1
@@ -352,7 +373,7 @@ class CPU:
                     self.reg[self.SP] += 1
 
                     # Pop FL off the stack
-                    self.FL = self.ram_read(self.reg[self.SP])
+                    self.reg[self.FL] = self.ram_read(self.reg[self.SP])
                     self.reg[self.SP] += 1
 
                     # Pop return address off stack and set to PC reg
@@ -362,9 +383,23 @@ class CPU:
                     # Re-enable interrupts
                     it.start()
 
+                elif instr_ident == JEQ:
+                    if self.reg[self.FL] & 1:
+                        reg_idx = self.ram_read(self.PC + 1)
+                        self.PC = self.reg[reg_idx]
+                    else:
+                        self.PC += mov_pc
+
                 elif instr_ident == JMP:
                     reg_idx = self.ram_read(self.PC + 1)
                     self.PC = self.reg[reg_idx]
+
+                elif instr_ident == JNE:
+                    if not self.reg[self.FL] & 1:
+                        reg_idx = self.ram_read(self.PC + 1)
+                        self.PC = self.reg[reg_idx]
+                    else:
+                        self.PC += mov_pc
 
                 elif instr_ident == RET:
                     self.PC = self.ram_read(self.reg[self.SP])
