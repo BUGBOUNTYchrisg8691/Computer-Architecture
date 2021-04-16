@@ -132,6 +132,8 @@ class CPU:
             else:
                 self.reg[self.FL] = self.reg[self.FL] & ~(1 << 0)
 
+            self.PC += mov_pc
+
         elif instr_ident == DEC:
             self.reg[self.ram[regs[0]]] -= 0b1
             self.PC += mov_pc
