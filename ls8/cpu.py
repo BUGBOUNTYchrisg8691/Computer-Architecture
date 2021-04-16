@@ -1,9 +1,11 @@
 """CPU functionality."""
 
-import sys
-import re
 import os
+import re
+import sys
+
 from interrupt_timer import InterruptTimer
+
 
 class CPU:
     """Main CPU class."""
@@ -17,31 +19,30 @@ class CPU:
         self.PC = 0b0
 
         # Flags
-        self.FL = 0b00000000
+        self.FL = 0b0
 
         # Not Sure?
         self.IE = 0b0
 
         # interrupt Mask
-        self.IM = self.reg[5]
+        # self.IM = self.reg[5]
 
         # Interrupt Status
-        self.IS = self.reg[6]
+        # self.IS = self.reg[6]
 
         # Stack Pointer
         self.reg[7] = 0xF4
         self.SP = self.reg[7]
 
         # Interrupt Vector Table
-        self.I7 = self.ram[0xff]
-        self.I6 = self.ram[0xfe]
-        self.I5 = self.ram[0xfd]
-        self.I4 = self.ram[0xfc]
-        self.I3 = self.ram[0xfb]
-        self.I2 = self.ram[0xfa]
-        self.I1 = self.ram[0xf9]
-        self.I0 = self.ram[0xf8]
-
+        self.I7 = 0xFF
+        self.I6 = 0xFE
+        self.I5 = 0xFD
+        self.I4 = 0xFC
+        self.I3 = 0xFB
+        self.I2 = 0xFA
+        self.I1 = 0xF9
+        self.I0 = 0xF8
 
     def load(self, program_file=None):
         """Load a program into memory."""
@@ -53,17 +54,18 @@ class CPU:
             program = self.parse_instructions(program_file)
 
         else:
-            print(f"Usage: python3 {os.path.basename(__file__)} <path to instruction set file>")
+            print(
+                f"Usage: python3 {os.path.basename(__file__)} <path to instruction set file>"
+            )
             sys.exit(1)
 
         for instruction in program:
             self.ram_write(instruction, address)
             address += 1
 
-
     def alu(self, mov_pc, instr_ident):
         """ALU operations."""
-        regs= []
+        regs = []
 
         for i in range(self.PC + 1, self.PC + mov_pc):
             regs.append(i)
@@ -71,17 +73,17 @@ class CPU:
         # Instruction Identifiers
         ADD = 0b0000
         AND = 0b1000
-        CMP = 0b0111
-        DEC = 0b0110
-        DIV = 0b0011
-        INC = 0b0101
-        MOD = 0b0100
-        MUL = 0b0010
+        CMP = 0b111
+        DEC = 0b110
+        DIV = 0b11
+        INC = 0b101
+        MOD = 0b100
+        MUL = 0b10
         NOT = 0b1001
-        OR  = 0b1010
+        OR = 0b1010
         SHL = 0b1100
         SHR = 0b1101
-        SUB = 0b0001
+        SUB = 0b1
         XOR = 0b1011
 
         # Maybe I will choose to decode these in this function
@@ -111,7 +113,7 @@ class CPU:
             self.PC += mov_pc
 
         elif instr_ident == DEC:
-            self.reg[self.ram[regs[0]]] -= 0b00000001
+            self.reg[self.ram[regs[0]]] -= 0b1
             self.PC += mov_pc
 
         elif instr_ident == DIV:
@@ -119,7 +121,7 @@ class CPU:
             self.PC += mov_pc
 
         elif instr_ident == INC:
-            self.reg[self.ram[regs[0]]] += 0b00000001
+            self.reg[self.ram[regs[0]]] += 0b1
             self.PC += mov_pc
 
         elif instr_ident == MOD:
@@ -164,17 +166,21 @@ class CPU:
         from run() if you need help debugging.
         """
 
-        print(f"TRACE: PC: %02X | RAM@PC: %02X, RAM@PC+1: %02X, RAM@PC+2: %02X |" % (
-            self.PC,
-            # self.FL,
-            # self.IS,
-            self.ram_read(self.PC),
-            self.ram_read(self.PC + 1),
-            self.ram_read(self.PC + 2)
-        ), end='')
+        print(
+            f"TRACE: PC: %02X | RAM@PC: %02X, RAM@PC+1: %02X, RAM@PC+2: %02X |"
+            % (
+                self.PC,
+                # self.FL,
+                # self.IS,
+                self.ram_read(self.PC),
+                self.ram_read(self.PC + 1),
+                self.ram_read(self.PC + 2),
+            ),
+            end="",
+        )
 
         for i in range(8):
-            print(" %02X" % self.reg[i], end='')
+            print(" %02X" % self.reg[i], end="")
 
         print()
 
@@ -200,12 +206,14 @@ class CPU:
         binary literals.
         """
         parsed = []
-        regex_match = '[0-1]{8}'
+        regex_match = "[0-1]{8}"
 
         try:
-            with open(filename, 'r') as file:
+            with open(filename, "r") as file:
                 for line in file.read().splitlines():
-                    parsed.append([s for s in line.split(" ") if re.match(regex_match, s)])
+                    parsed.append(
+                        [s for s in line.split(" ") if re.match(regex_match, s)]
+                    )
 
             program = [int(i[0], 2) for i in parsed if i]
 
@@ -223,21 +231,29 @@ class CPU:
         amount the program counter should move and the
         instruction identifier.
         """
-        mov_pc_mask = 0b00000011
-        first_bit_instruction_mask = 0b00000001
-        instr_ident_mask = 0b00001111
-        is_alu = ((instr >> 5) & first_bit_instruction_mask)
-        sets_pc = ((instr >> 4) & first_bit_instruction_mask)
+        mov_pc_mask = 0b11
+        first_bit_instruction_mask = 0b1
+        instr_ident_mask = 0b1111
+        is_alu = (instr >> 5) & first_bit_instruction_mask
+        sets_pc = (instr >> 4) & first_bit_instruction_mask
         mov_pc = ((instr >> 6) & mov_pc_mask) + 1
-        instr_ident = (instr & instr_ident_mask)
+        instr_ident = instr & instr_ident_mask
 
         return is_alu, sets_pc, mov_pc, instr_ident
+
+    # def mov_pc(self, mov):
+    #     """Move program counter distance of `mov`"""
+    #     self.PC += mov
+
+    # def set_pc(self, new_pc):
+    #     """Set program counter to `new_pc`"""
+    #     self.PC = new_pc
 
     def set_IS_bit(self):
         """
         Sets 0 bit of IS every 1 seconds.
         """
-        self.IS = 0b1
+        self.reg[6] = 0b1
 
     def run(self):
         """Run the CPU."""
@@ -249,40 +265,39 @@ class CPU:
         it.start()
 
         # Instruction cases
-        HLT  = 0b0001
-        LDI  = 0b0010
-        POP  = 0b0110
-        PRA  = 0b1000
-        PRN  = 0b0111
-        PUSH = 0b0101
-        ST   = 0b0100
+        HLT = 0b1
+        LDI = 0b10
+        POP = 0b110
+        PRA = 0b1000
+        PRN = 0b111
+        PUSH = 0b101
+        ST = 0b100
 
         # instructions that set pc manually
-        CALL = 0b0000
-        INT  = 0b0010
-        IRET = 0b0011
-        JMP  = 0b0100
-        RET  = 0b0001
+        CALL = 0b0
+        INT = 0b10
+        IRET = 0b11
+        JMP = 0b100
+        RET = 0b1
 
         while running:
             # trace for debugging
-            self.trace()
+            # self.trace()
 
             # interrupt check
-            if self.IS:
-                masked_interrupts = self.IM & self.IS
+            if self.reg[6]:
+                masked_interrupts = self.reg[5] & self.reg[6]
 
                 # check all 8 bits of the IS register
                 for i in range(8):
                     interrupt_occurred = ((masked_interrupts >> i) & 1) == 1
-                    # print(self.IM, self.IS, masked_interrupts, i, interrupt_occurred)
 
                     if interrupt_occurred:
                         # if interrupt occurred, disable further interrupts
                         it.stop()
 
                         # clear IS register
-                        self.IS = 0b0
+                        self.reg[6] = 0b0
 
                         # push PC reg, FL reg, and R0 through R6 onto stack
                         # in that order
@@ -402,7 +417,7 @@ class CPU:
 
             elif instr_ident == PRA:
                 reg_idx = self.ram_read(self.PC + 1)
-                print(self.reg[reg_idx])
+                print(chr(self.reg[reg_idx]))
                 self.PC += mov_pc
 
             else:
