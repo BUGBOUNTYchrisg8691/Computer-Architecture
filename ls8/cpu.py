@@ -25,14 +25,14 @@ class CPU:
         self.IE = 0b0
 
         # interrupt Mask
-        # self.IM = self.reg[5]
+        self.IM = 0b101
 
         # Interrupt Status
-        # self.IS = self.reg[6]
+        self.IS = 0b110
 
         # Stack Pointer
-        self.reg[7] = 0xF4
-        self.SP = self.reg[7]
+        self.SP = 0b111
+        self.reg[self.SP] = 0xF4
 
         # Interrupt Vector Table
         self.I7 = 0xFF
@@ -71,7 +71,7 @@ class CPU:
             regs.append(i)
 
         # Instruction Identifiers
-        ADD = 0b0000
+        ADD = 0b0
         AND = 0b1000
         CMP = 0b111
         DEC = 0b110
@@ -241,19 +241,11 @@ class CPU:
 
         return is_alu, sets_pc, mov_pc, instr_ident
 
-    # def mov_pc(self, mov):
-    #     """Move program counter distance of `mov`"""
-    #     self.PC += mov
-
-    # def set_pc(self, new_pc):
-    #     """Set program counter to `new_pc`"""
-    #     self.PC = new_pc
-
     def set_IS_bit(self):
         """
         Sets 0 bit of IS every 1 seconds.
         """
-        self.reg[6] = 0b1
+        self.reg[self.IS] = 0b1
 
     def run(self):
         """Run the CPU."""
@@ -285,8 +277,8 @@ class CPU:
             # self.trace()
 
             # interrupt check
-            if self.reg[6]:
-                masked_interrupts = self.reg[5] & self.reg[6]
+            if self.reg[self.IS]:
+                masked_interrupts = self.reg[self.IM] & self.reg[self.IS]
 
                 # check all 8 bits of the IS register
                 for i in range(8):
@@ -297,28 +289,28 @@ class CPU:
                         it.stop()
 
                         # clear IS register
-                        self.reg[6] = 0b0
+                        self.reg[self.IS] = 0b0
 
                         # push PC reg, FL reg, and R0 through R6 onto stack
                         # in that order
-                        self.SP -= 1
-                        self.ram_write(self.PC, self.SP)
-                        self.SP -= 1
-                        self.ram_write(self.FL, self.SP)
-                        self.SP -= 1
-                        self.ram_write(self.reg[0], self.SP)
-                        self.SP -= 1
-                        self.ram_write(self.reg[1], self.SP)
-                        self.SP -= 1
-                        self.ram_write(self.reg[2], self.SP)
-                        self.SP -= 1
-                        self.ram_write(self.reg[3], self.SP)
-                        self.SP -= 1
-                        self.ram_write(self.reg[4], self.SP)
-                        self.SP -= 1
-                        self.ram_write(self.reg[5], self.SP)
-                        self.SP -= 1
-                        self.ram_write(self.reg[6], self.SP)
+                        self.reg[self.SP] -= 1
+                        self.ram_write(self.PC, self.reg[self.SP])
+                        self.reg[self.SP] -= 1
+                        self.ram_write(self.FL, self.reg[self.SP])
+                        self.reg[self.SP] -= 1
+                        self.ram_write(self.reg[0], self.reg[self.SP])
+                        self.reg[self.SP] -= 1
+                        self.ram_write(self.reg[1], self.reg[self.SP])
+                        self.reg[self.SP] -= 1
+                        self.ram_write(self.reg[2], self.reg[self.SP])
+                        self.reg[self.SP] -= 1
+                        self.ram_write(self.reg[3], self.reg[self.SP])
+                        self.reg[self.SP] -= 1
+                        self.ram_write(self.reg[4], self.reg[self.SP])
+                        self.reg[self.SP] -= 1
+                        self.ram_write(self.reg[self.IM], self.reg[self.SP])
+                        self.reg[self.SP] -= 1
+                        self.ram_write(self.reg[self.IS], self.reg[self.SP])
 
                         # PC is set to vector from interrupt vector table
                         self.PC = self.ram_read(self.I0)
@@ -334,35 +326,35 @@ class CPU:
             # and then run logic per that instruction
             if sets_pc:
                 if instr_ident == CALL:
-                    self.SP -= 1
-                    self.ram_write(self.PC + mov_pc, self.SP)
+                    self.reg[self.SP] -= 1
+                    self.ram_write(self.PC + mov_pc, self.reg[self.SP])
                     reg_idx = self.ram_read(self.PC + 1)
                     self.PC = self.reg[reg_idx]
 
                 elif instr_ident == IRET:
                     # Pop R6 through R0 and put them back in the registers
-                    self.reg[6] = self.ram_read(self.SP)
-                    self.SP += 1
-                    self.reg[5] = self.ram_read(self.SP)
-                    self.SP += 1
-                    self.reg[4] = self.ram_read(self.SP)
-                    self.SP += 1
-                    self.reg[3] = self.ram_read(self.SP)
-                    self.SP += 1
-                    self.reg[2] = self.ram_read(self.SP)
-                    self.SP += 1
-                    self.reg[1] = self.ram_read(self.SP)
-                    self.SP += 1
-                    self.reg[0] = self.ram_read(self.SP)
-                    self.SP += 1
+                    self.reg[self.IS] = self.ram_read(self.reg[self.SP])
+                    self.reg[self.SP] += 1
+                    self.reg[self.IM] = self.ram_read(self.reg[self.SP])
+                    self.reg[self.SP] += 1
+                    self.reg[4] = self.ram_read(self.reg[self.SP])
+                    self.reg[self.SP] += 1
+                    self.reg[3] = self.ram_read(self.reg[self.SP])
+                    self.reg[self.SP] += 1
+                    self.reg[2] = self.ram_read(self.reg[self.SP])
+                    self.reg[self.SP] += 1
+                    self.reg[1] = self.ram_read(self.reg[self.SP])
+                    self.reg[self.SP] += 1
+                    self.reg[0] = self.ram_read(self.reg[self.SP])
+                    self.reg[self.SP] += 1
 
                     # Pop FL off the stack
-                    self.FL = self.ram_read(self.SP)
-                    self.SP += 1
+                    self.FL = self.ram_read(self.reg[self.SP])
+                    self.reg[self.SP] += 1
 
                     # Pop return address off stack and set to PC reg
-                    self.PC = self.ram_read(self.SP)
-                    self.SP += 1
+                    self.PC = self.ram_read(self.reg[self.SP])
+                    self.reg[self.SP] += 1
 
                     # Re-enable interrupts
                     it.start()
@@ -372,8 +364,8 @@ class CPU:
                     self.PC = self.reg[reg_idx]
 
                 elif instr_ident == RET:
-                    self.PC = self.ram_read(self.SP)
-                    self.SP += 1
+                    self.PC = self.ram_read(self.reg[self.SP])
+                    self.reg[self.SP] += 1
 
             # Checks is_alu bit then sends the mov_pc bits and
             # instruction identifier bits to the alu method
@@ -399,14 +391,14 @@ class CPU:
             elif instr_ident == PUSH:
                 reg_idx = self.ram_read(self.PC + 1)
                 val = self.reg[reg_idx]
-                self.SP -= 1
-                self.ram_write(val, self.SP)
+                self.reg[self.SP] -= 1
+                self.ram_write(val, self.reg[self.SP])
                 self.PC += mov_pc
 
             elif instr_ident == POP:
                 reg_idx = self.ram_read(self.PC + 1)
-                self.reg[reg_idx] = self.ram_read(self.SP)
-                self.SP += 1
+                self.reg[reg_idx] = self.ram_read(self.reg[self.SP])
+                self.reg[self.SP] += 1
                 self.PC += mov_pc
 
             elif instr_ident == ST:
