@@ -1,9 +1,14 @@
 """CPU functionality."""
 
+# Built-in imports
 import os
 import re
 import sys
 
+# Libraries
+from pygame import *
+
+# Custom dep imports
 from interrupt_timer import InterruptTimer
 
 
