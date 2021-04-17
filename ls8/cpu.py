@@ -50,6 +50,11 @@ class CPU:
         self.I1 = 0xF9
         self.I0 = 0xF8
 
+        # Create FL reg masks
+        self.CMP_LT_MASK = 0b100
+        self.CMP_GT_MASK = 0b10
+        self.CMP_EQ_MASK = 0b1
+
     def load(self, program_file=None):
         """Load a program into memory."""
 
@@ -120,23 +125,20 @@ class CPU:
             self.PC += mov_pc
 
         elif instr_ident == CMP:
+            # Clear FL reg
+            self.reg[self.FL] = 0b0
+
             # Set L bit in FL reg
             if self.reg[self.ram_read(regs[0])] < self.reg[self.ram_read(regs[1])]:
-                self.reg[self.FL] = self.reg[self.FL] | (1 << 2)
-            else:
-                self.reg[self.FL] = self.reg[self.FL] & ~(1 << 2)
+                self.reg[self.FL] |= self.CMP_LT_MASK
 
             # Set G bit in FL reg
-            if self.reg[self.ram_read(regs[0])] > self.reg[self.ram_read(regs[1])]:
-                self.reg[self.FL] = self.reg[self.FL] | (1 << 1)
-            else:
-                self.reg[self.FL] = self.reg[self.FL] & ~(1 << 1)
+            elif self.reg[self.ram_read(regs[0])] > self.reg[self.ram_read(regs[1])]:
+                self.reg[self.FL] |= self.CMP_GT_MASK
 
             # Set E bit in FL reg
-            if self.reg[self.ram_read(regs[0])] == self.reg[self.ram_read(regs[1])]:
-                self.reg[self.FL] = self.reg[self.FL] | (1 << 0)
-            else:
-                self.reg[self.FL] = self.reg[self.FL] & ~(1 << 0)
+            elif self.reg[self.ram_read(regs[0])] == self.reg[self.ram_read(regs[1])]:
+                self.reg[self.FL] |= self.CMP_EQ_MASK
 
             self.PC += mov_pc
 
@@ -393,7 +395,7 @@ class CPU:
                     it.start()
 
                 elif instr_ident == JEQ:
-                    if self.reg[self.FL] & 1:
+                    if self.reg[self.FL] & self.CMP_EQ_MASK:
                         reg_idx = self.ram_read(self.PC + 1)
                         self.PC = self.reg[reg_idx]
                     else:
@@ -404,7 +406,7 @@ class CPU:
                     self.PC = self.reg[reg_idx]
 
                 elif instr_ident == JNE:
-                    if not self.reg[self.FL] & 1:
+                    if not self.reg[self.FL] & self.CMP_EQ_MASK:
                         reg_idx = self.ram_read(self.PC + 1)
                         self.PC = self.reg[reg_idx]
                     else:
