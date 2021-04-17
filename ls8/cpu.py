@@ -77,13 +77,14 @@ class CPU:
 
     def alu(self, mov_pc, instr_ident):
         """ALU operations."""
-        regs = []
+        operands = []
 
         for i in range(self.PC + 1, self.PC + mov_pc):
-            regs.append(i)
-
-        # Instruction Identifiers
+            operands.append(i)
+        print(operands)
+        # Instruction Identifiers (remaining instr_ident `0b1111`)
         ADD = 0b0
+        ADDI = 0b1110
         AND = 0b1000
         CMP = 0b111
         DEC = 0b110
@@ -117,11 +118,14 @@ class CPU:
         # XOR = 0b10101011
 
         if instr_ident == ADD:
-            self.reg[self.ram_read(regs[0])] += self.reg[self.ram_read(regs[1])]
+            self.reg[self.ram_read(operands[0])] += self.reg[self.ram_read(operands[1])]
             self.PC += mov_pc
 
+        elif instr_ident == ADDI:
+            self.reg[self.ram_read(operands[0])] += operands[1]
+
         elif instr_ident == AND:
-            self.reg[self.ram_read(regs[0])] &= self.reg[self.ram_read(regs[1])]
+            self.reg[self.ram_read(operands[0])] &= self.reg[self.ram_read(operands[1])]
             self.PC += mov_pc
 
         elif instr_ident == CMP:
@@ -129,62 +133,62 @@ class CPU:
             self.reg[self.FL] = 0b0
 
             # Set L bit in FL reg
-            if self.reg[self.ram_read(regs[0])] < self.reg[self.ram_read(regs[1])]:
+            if self.reg[self.ram_read(operands[0])] < self.reg[self.ram_read(operands[1])]:
                 self.reg[self.FL] |= self.CMP_LT_MASK
 
             # Set G bit in FL reg
-            elif self.reg[self.ram_read(regs[0])] > self.reg[self.ram_read(regs[1])]:
+            elif self.reg[self.ram_read(operands[0])] > self.reg[self.ram_read(operands[1])]:
                 self.reg[self.FL] |= self.CMP_GT_MASK
 
             # Set E bit in FL reg
-            elif self.reg[self.ram_read(regs[0])] == self.reg[self.ram_read(regs[1])]:
+            elif self.reg[self.ram_read(operands[0])] == self.reg[self.ram_read(operands[1])]:
                 self.reg[self.FL] |= self.CMP_EQ_MASK
 
             self.PC += mov_pc
 
         elif instr_ident == DEC:
-            self.reg[self.ram_read(regs[0])] -= 1
+            self.reg[self.ram_read(operands[0])] -= 1
             self.PC += mov_pc
 
         elif instr_ident == DIV:
-            self.reg[self.ram_read(regs[0])] /= self.reg[self.ram_read(regs[1])]
+            self.reg[self.ram_read(operands[0])] /= self.reg[self.ram_read(operands[1])]
             self.PC += mov_pc
 
         elif instr_ident == INC:
-            self.reg[self.ram_read(regs[0])] += 1
+            self.reg[self.ram_read(operands[0])] += 1
             self.PC += mov_pc
 
         elif instr_ident == MOD:
-            self.reg[self.ram_read(regs[0])] %= self.reg[self.ram_read(regs[1])]
+            self.reg[self.ram_read(operands[0])] %= self.reg[self.ram_read(operands[1])]
             self.PC += mov_pc
 
         elif instr_ident == MUL:
-            self.reg[self.ram_read(regs[0])] *= self.reg[self.ram_read(regs[1])]
+            self.reg[self.ram_read(operands[0])] *= self.reg[self.ram_read(operands[1])]
             self.PC += mov_pc
 
         elif instr_ident == NOT:
             xor_mask = 0b11111111
-            self.reg[self.ram_read(regs[0])] = self.reg[self.ram_read(regs[0])] ^ xor_mask
+            self.reg[self.ram_read(operands[0])] = self.reg[self.ram_read(operands[0])] ^ xor_mask
             self.PC += mov_pc
 
         elif instr_ident == OR:
-            self.reg[self.ram_read(regs[0])] |= self.reg[self.ram_read(regs[1])]
+            self.reg[self.ram_read(operands[0])] |= self.reg[self.ram_read(operands[1])]
             self.PC += mov_pc
 
         elif instr_ident == SHL:
-            self.reg[self.ram_read(regs[0])] <<= self.reg[self.ram_read(regs[1])]
+            self.reg[self.ram_read(operands[0])] <<= self.reg[self.ram_read(operands[1])]
             self.PC += mov_pc
 
         elif instr_ident == SHR:
-            self.reg[self.ram_read(regs[0])] >>= self.reg[self.ram_read(regs[1])]
+            self.reg[self.ram_read(operands[0])] >>= self.reg[self.ram_read(operands[1])]
             self.PC += mov_pc
 
         elif instr_ident == SUB:
-            self.reg[self.ram_read(regs[0])] -= self.reg[self.ram_read(regs[1])]
+            self.reg[self.ram_read(operands[0])] -= self.reg[self.ram_read(operands[1])]
             self.PC += mov_pc
 
         elif instr_ident == XOR:
-            self.reg[self.ram_read(regs[0])] ^= self.reg[self.ram_read(regs[1])]
+            self.reg[self.ram_read(operands[0])] ^= self.reg[self.ram_read(operands[1])]
             self.PC += mov_pc
 
         else:

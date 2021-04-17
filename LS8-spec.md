@@ -193,6 +193,20 @@ Machine code:
 A0 0a 0b
 ```
 
+### ADDI
+
+*This is an instruction handled by the ALU.*
+
+`ADDI register immediate`
+
+Add the register value and immediate value and store the result in register.
+
+Machine code:
+```
+10101110 00000rrr iiiiiiiii
+AE 0r ii
+```
+
 ### AND
 
 *This is an instruction handled by the ALU.*
@@ -286,7 +300,7 @@ Halt the CPU (and exit the emulator).
 
 Machine code:
 ```
-00000001 
+00000001
 01
 ```
 
