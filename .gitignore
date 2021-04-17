@@ -828,3 +828,4 @@ FodyWeavers.xsd
 
 .gitignore.bak
 .vscode
+.vim
