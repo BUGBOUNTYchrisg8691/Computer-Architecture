@@ -1,12 +1,30 @@
 """CPU functionality."""
 
+# Maybe I will choose to decode these in the alu()
+# instead of passing the decoded parts in in a future
+# iteration
+# ADD = 0b10100000
+# AND = 0b10101000
+# CMP = 0b10100111
+# DEC = 0b01100110
+# DIV = 0b10100011
+# INC = 0b01100101
+# MOD = 0b10100100
+# MUL = 0b10100010
+# NOT = 0b01101001
+# OR  = 0b10101010
+# SHL = 0b10101100
+# SHR = 0b10101101
+# SUB = 0b10100001
+# XOR = 0b10101011
+
 # Built-in imports
 import os
 import re
 import sys
 
 # Libraries
-from pygame import *
+import pygame
 
 # Custom dep imports
 from interrupt_timer import InterruptTimer
@@ -20,24 +38,28 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
 
-        # Program Counter
-        self.PC = 0b0
+        # Program Counter (start at 0)
+        self.PC = 0
 
-        # Flags
-        self.FL = 0b100
-
-        # Not Sure?
-        # self.IE = 0b0
+        # CMP Flags
+        # reg[4]
+        self.FL = 4
+        # Create FL reg masks
+        self.LT_MASK = 0b100
+        self.GT_MASK = 0b10
+        self.EQ_MASK = 0b1
 
         # interrupt Mask and Status
+        # Interrupts enabled (start enabled)
+        self.IE = True
         # reg[5]
-        self.IM = 0b101
+        self.IM = 5
         # reg[6]
-        self.IS = 0b110
+        self.IS = 6
 
         # Stack Pointer
         # reg[7]
-        self.SP = 0b111
+        self.SP = 7
         self.reg[self.SP] = 0xF4
 
         # Interrupt Vector Table
@@ -49,11 +71,6 @@ class CPU:
         self.I2 = 0xFA
         self.I1 = 0xF9
         self.I0 = 0xF8
-
-        # Create FL reg masks
-        self.CMP_LT_MASK = 0b100
-        self.CMP_GT_MASK = 0b10
-        self.CMP_EQ_MASK = 0b1
 
     def load(self, program_file=None):
         """Load a program into memory."""
@@ -81,7 +98,7 @@ class CPU:
 
         for i in range(self.PC + 1, self.PC + mov_pc):
             operands.append(i)
-        print(operands)
+
         # Instruction Identifiers (remaining instr_ident `0b1111`)
         ADD = 0b0
         ADDI = 0b1110
@@ -98,24 +115,6 @@ class CPU:
         SHR = 0b1101
         SUB = 0b1
         XOR = 0b1011
-
-        # Maybe I will choose to decode these in this function
-        # instead of passing the decoded parts in in a future
-        # iteration
-        # ADD = 0b10100000
-        # AND = 0b10101000
-        # CMP = 0b10100111
-        # DEC = 0b01100110
-        # DIV = 0b10100011
-        # INC = 0b01100101
-        # MOD = 0b10100100
-        # MUL = 0b10100010
-        # NOT = 0b01101001
-        # OR  = 0b10101010
-        # SHL = 0b10101100
-        # SHR = 0b10101101
-        # SUB = 0b10100001
-        # XOR = 0b10101011
 
         if instr_ident == ADD:
             self.reg[self.ram_read(operands[0])] += self.reg[self.ram_read(operands[1])]
@@ -138,21 +137,21 @@ class CPU:
                 self.reg[self.ram_read(operands[0])]
                 < self.reg[self.ram_read(operands[1])]
             ):
-                self.reg[self.FL] |= self.CMP_LT_MASK
+                self.reg[self.FL] |= self.LT_MASK
 
             # Set G bit in FL reg
             elif (
                 self.reg[self.ram_read(operands[0])]
                 > self.reg[self.ram_read(operands[1])]
             ):
-                self.reg[self.FL] |= self.CMP_GT_MASK
+                self.reg[self.FL] |= self.GT_MASK
 
             # Set E bit in FL reg
             elif (
                 self.reg[self.ram_read(operands[0])]
                 == self.reg[self.ram_read(operands[1])]
             ):
-                self.reg[self.FL] |= self.CMP_EQ_MASK
+                self.reg[self.FL] |= self.EQ_MASK
 
             self.PC += mov_pc
 
@@ -323,6 +322,10 @@ class CPU:
         INT = 0b10
         IRET = 0b11
         JEQ = 0b101
+        JGE = 0b1010
+        JGT = 0b0111
+        JLE = 0b1001
+        JLT = 0b1000
         JMP = 0b100
         JNE = 0b110
         RET = 0b1
@@ -332,7 +335,7 @@ class CPU:
             # self.trace()
 
             # interrupt check
-            if self.reg[self.IS]:
+            if self.reg[self.IS] and self.IE:
                 masked_interrupts = self.reg[self.IM] & self.reg[self.IS]
 
                 # check all 8 bits of the IS register
@@ -341,7 +344,7 @@ class CPU:
 
                     if interrupt_occurred:
                         # if interrupt occurred, disable further interrupts
-                        it.stop()
+                        self.IE = False
 
                         # clear IS register
                         self.reg[self.IS] = 0b0
@@ -369,6 +372,7 @@ class CPU:
 
                         # PC is set to vector from interrupt vector table
                         self.PC = self.ram_read(self.I0)
+                        break
 
             # Fetch the next instruction and store in
             # in the Instruction Register
@@ -385,6 +389,11 @@ class CPU:
                     self.ram_write(self.PC + mov_pc, self.reg[self.SP])
                     reg_idx = self.ram_read(self.PC + 1)
                     self.PC = self.reg[reg_idx]
+
+                elif instr_ident == INT:
+                    n = self.ram_read(self.PC + 1)
+                    self.reg[self.IS] |= n
+                    self.PC += mov_pc
 
                 elif instr_ident == IRET:
                     # Pop R6 through R0 and put them back in the registers
@@ -412,10 +421,44 @@ class CPU:
                     self.reg[self.SP] += 1
 
                     # Re-enable interrupts
-                    it.start()
+                    self.IE = True
 
                 elif instr_ident == JEQ:
-                    if self.reg[self.FL] & self.CMP_EQ_MASK:
+                    if self.reg[self.FL] & self.EQ_MASK:
+                        reg_idx = self.ram_read(self.PC + 1)
+                        self.PC = self.reg[reg_idx]
+                    else:
+                        self.PC += mov_pc
+
+                elif instr_ident == JGE:
+                    if (
+                        self.reg[self.FL] & self.GT_MASK
+                        or self.reg[self.FL] & self.EQ_MASK
+                    ):
+                        reg_idx = self.ram_read(self.PC + 1)
+                        self.PC = self.reg[reg_idx]
+                    else:
+                        self.PC += mov_pc
+
+                elif instr_ident == JGT:
+                    if self.reg[self.FL] & self.GT_MASK:
+                        reg_idx = self.ram_read(self.PC + 1)
+                        self.PC = self.reg[reg_idx]
+                    else:
+                        self.PC += mov_pc
+
+                elif instr_ident == JLE:
+                    if (
+                        self.reg[self.FL] & self.LT_MASK
+                        or self.reg[self.FL] & self.EQ_MASK
+                    ):
+                        reg_idx = self.ram_read(self.PC + 1)
+                        self.PC = self.reg[reg_idx]
+                    else:
+                        self.PC += mov_pc
+
+                elif instr_ident == JLT:
+                    if self.reg[self.FL] & self.LT_MASK:
                         reg_idx = self.ram_read(self.PC + 1)
                         self.PC = self.reg[reg_idx]
                     else:
@@ -426,7 +469,7 @@ class CPU:
                     self.PC = self.reg[reg_idx]
 
                 elif instr_ident == JNE:
-                    if not self.reg[self.FL] & self.CMP_EQ_MASK:
+                    if not self.reg[self.FL] & self.EQ_MASK:
                         reg_idx = self.ram_read(self.PC + 1)
                         self.PC = self.reg[reg_idx]
                     else:
