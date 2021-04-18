@@ -2,6 +2,7 @@
 
 """Main."""
 
+import os
 import sys
 
 from cpu import CPU

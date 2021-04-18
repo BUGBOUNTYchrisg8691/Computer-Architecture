@@ -56,6 +56,7 @@ class CPU:
                 program = regex_patt.findall(file.read())
 
         except FileNotFoundError:
+            print(f"File not found: `{sys.argv[1]}`")
             print(
                 f"Usage: python3 {os.path.basename(__file__)} "
                 "<path to instruction set>"
