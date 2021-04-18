@@ -14,11 +14,36 @@ class CPU:
         self.reg = [0] * 8
         self.pc = 0
         self.ir = None
+
+        # Flags reg for CMP
         self.__fl = 0b000
+        self.__lt_mask = 0b100
+        self.__gt_mask = 0b10
+        self.__eq_mask = 0b1
+
+        # Interrupt Enabled?, Mask and Status regs
         self.__ie = False
         self.__im = 5
         self.__is = 6
+
+        # Stack Pointer reg
         self.__sp = 7
+        self.reg[self.__sp] = 0xF4
+
+        # Reserved
+        self.ram_write("RESERVED", 0xF5)
+        self.ram_write("RESERVED", 0xF6)
+        self.ram_write("RESERVED", 0xF7)
+
+        # Interrupt Vector Table
+        self.i0 = 0xF8
+        self.i1 = 0xF9
+        self.i2 = 0xFA
+        self.i3 = 0xFB
+        self.i4 = 0xFC
+        self.i5 = 0xFD
+        self.i6 = 0xFE
+        self.i7 = 0xFF
 
     def load(self, filename):
         """
@@ -44,10 +69,26 @@ class CPU:
             address += 1
 
     def ram_read(self, mar):
-        pass
+        return self.ram[mar]
 
     def ram_write(self, mdr, mar):
-        pass
+        self.ram[mar] = mdr
+
+    def reg_read(self, reg_idx):
+        return self.reg[reg_idx]
+
+    def reg_write(self, val, reg_idx):
+        self.reg[reg_idx] = val
+
+    def push_stack(self, val):
+        self.reg[self.__sp] -= 1
+        self.ram_write(val, self.reg[self.__sp])
+
+    def pop_stack(self):
+        val = self.ram_read(self.reg[self.__sp])
+        self.reg[self.__sp] += 1
+
+        return val
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
