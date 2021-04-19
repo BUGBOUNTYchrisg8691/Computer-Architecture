@@ -4,7 +4,7 @@ import os
 import re
 import sys
 
-# Threaded Interrupt Timer Class import
+# Threaded Interrupt Timer Class
 from interrupt_timer import InterruptTimer
 
 
@@ -29,6 +29,8 @@ class CPU:
         self.__ie = False
         self.__im = 5
         self.__is = 6
+        self.__timer_int = 0b00000001
+        self.__key_int = 0b00000010
         self.__it = InterruptTimer(1, self.handle_timer_interrupt)
 
         # Stack Pointer reg
@@ -141,6 +143,7 @@ class CPU:
 
     def handle_hlt(self, mov_pc):
         self.running = False
+        self.__it.stop()
         sys.exit(0)
 
     def handle_ldi(self, mov_pc):
@@ -255,12 +258,13 @@ class CPU:
         self.pc = self.pop_stack()
 
     def handle_int(self, mov_pc):
-        pass
+        [reg_idx] = self.get_instr_args(mov_pc)
+        self.__is |= self.reg[reg_idx]
 
     def handle_iret(self, mov_pc):
         # pop R6 through R0, FL reg, and PC off stack
         # in that order
-        for i in range(7, 0, -1):
+        for i in range(6, -1, -1):
             self.reg[i] = self.pop_stack()
 
         self.__fl = self.pop_stack()
@@ -332,7 +336,10 @@ class CPU:
         return val
 
     def handle_timer_interrupt(self):
-        self.reg[self.__is] = 0b1
+        self.reg[self.__is] |= self.__timer_int
+
+    def handle_key_interrupt(self):
+        pass
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -365,14 +372,6 @@ class CPU:
         sets_pc = (instruction >> 4) & single_bit_mask
         instr_ident = instruction & instr_ident_mask
 
-        # Possible option, don't know if this is beneficial yet
-        # return {
-        #     "mov_pc": mov_pc,
-        #     "is_alu": is_alu,
-        #     "sets_pc": sets_pc,
-        #     "instr_ident": instr_ident,
-        # }
-
         return mov_pc, is_alu, sets_pc, instr_ident
 
     def trace(self):
@@ -382,11 +381,11 @@ class CPU:
         """
 
         print(
-            f"TRACE: %02X | %02X %02X %02X |"
+            f"TRACE: %02X %02X %02X | %02X %02X %02X |"
             % (
                 self.pc,
-                # self.fl,
-                # self.ie,
+                self.__fl,
+                self.__ie,
                 self.ram_read(self.pc),
                 self.ram_read(self.pc + 1),
                 self.ram_read(self.pc + 2),
@@ -410,29 +409,27 @@ class CPU:
             # self.trace()
 
             # Interrupt check
-            if self.reg[self.__is] and self.__ie:
+            if self.__ie:
                 masked_interrupts = self.reg[self.__im] & self.reg[self.__is]
 
                 # check all bits of IS register
                 for i in range(8):
-                    interrupt_occurred = ((masked_interrupts >> 1) & 1) == 1
-
-                    if interrupt_occurred:
+                    if masked_interrupts & (1 << i):
                         # disable further interrupts
                         self.__ie = False
 
                         # clear IS reg
-                        self.__is = 0b0
+                        self.reg[self.__is] &= ~(1 << i)
 
                         # push PC reg, FL reg and R0 through R6 onto stack
                         # in that order
                         self.push_stack(self.pc)
                         self.push_stack(self.__fl)
-                        for i in range(7):
-                            self.push_stack(self.reg[i])
+                        for j in range(7):
+                            self.push_stack(self.reg[j])
 
                         # set PC to vector from interrupt vector table
-                        self.pc = self.ram_read(self.i0)
+                        self.pc = self.ram_read(self.i0 + i)
 
                         # break out of IS reg check
                         break
