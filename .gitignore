@@ -825,4 +825,4 @@ FodyWeavers.xsd
 *.tlog
 
 # End of https://www.toptal.com/developers/gitignore/api/vim,jetbrains+all,intellij+all,pycharm+all,vscode,visualstudio,visualstudiocode,linux,zsh,git,python,venv,virtualenv
-
+.vscode
