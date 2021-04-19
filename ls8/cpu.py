@@ -12,10 +12,11 @@ class CPU:
         """Construct a new CPU."""
         self.ram = [0] * 256
         self.reg = [0] * 8
+        self.running = False
         self.pc = 0
         self.ir = None
 
-        # Flags reg for CMP
+        # Flags reg for CMP and masks
         self.__fl = 0b000
         self.__lt_mask = 0b100
         self.__gt_mask = 0b10
@@ -66,7 +67,7 @@ class CPU:
         # Load program into memory
         address = 0
         for instruction in program:
-            self.ram[address] = instruction
+            self.ram_write(int(instruction, 2), address)
             address += 1
 
     def ram_read(self, mar):
@@ -91,14 +92,76 @@ class CPU:
 
         return val
 
-    def alu(self, op, reg_a, reg_b):
+    def handle_alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        if op == "ADD":
+        # ALU ops
+        ADD = 0b0000
+        SUB = 0b0001
+        MUL = 0b0010
+        DIV = 0b0011
+        MOD = 0b0100
+        INC = 0b0101
+        DEC = 0b0110
+        CMP = 0b0111
+        AND = 0b1000
+        NOT = 0b1001
+        OR = 0b1010
+        XOR = 0b1011
+        SHL = 0b1100
+        SHR = 0b1101
+
+        if instr_ident == ADD:
             self.reg[reg_a] += self.reg[reg_b]
         # elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
+
+    def handle_pc_mutators(self, instruction):
+        """Handles ops that mutate the Program Counter."""
+        # PC mutator ops
+        CALL = 0b0000
+        RET = 0b0001
+        INT = 0b0010
+        IRET = 0b0011
+        JMP = 0b0100
+        JEQ = 0b0101
+        JNE = 0b0110
+        JGT = 0b0111
+        JLT = 0b1000
+        JLE = 0b1001
+        JGE = 0b1010
+
+        pass
+
+    def get_instr_args(self, mov_pc):
+        args = []
+        for i in range(self.pc + 1, self.pc + mov_pc, 1):
+            args.append(self.ram_read(i))
+
+        return args
+
+    def decode_prog_instr(self, instruction):
+        # Masks for decoding
+        instr_ident_mask = 0b1111
+        instr_arg_cnt_mask = 0b11
+        single_bit_mask = 0b1
+
+        # Shift bits appropriate amount and bitwise-& to get only needed bits
+        mov_pc = ((instruction >> 6) & instr_arg_cnt_mask) + 1
+        is_alu = (instruction >> 5) & single_bit_mask
+        sets_pc = (instruction >> 4) & single_bit_mask
+        instr_ident = instruction & instr_ident_mask
+
+        # Possible option, don't know if this is beneficial yet
+        # return {
+        #     "mov_pc": mov_pc,
+        #     "is_alu": is_alu,
+        #     "sets_pc": sets_pc,
+        #     "instr_ident": instr_ident,
+        # }
+
+        return mov_pc, is_alu, sets_pc, instr_ident
 
     def trace(self):
         """
@@ -126,4 +189,45 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        print(self.ram)
+        # Other ops
+        NOP = 0b0000
+        HLT = 0b0001
+        LDI = 0b0010
+        LD = 0b0011
+        ST = 0b0100
+        PUSH = 0b0101
+        POP = 0b0110
+        PRN = 0b0111
+        PRA = 0b1000
+
+        self.running = True
+
+        while self.running:
+            # Read instruction from memory
+            self.ir = self.ram_read(self.pc)
+
+            # decode instruction
+            dec_instr = self.decode_prog_instr(self.ir)
+            mov_pc, is_alu, sets_pc, instr_ident = dec_instr
+
+            # Logic for ops
+            if instr_ident == HLT:
+                self.running = False
+                sys.exit(0)
+
+            elif instr_ident == LDI:
+                args = self.get_instr_args(mov_pc)
+                print(args)
+
+            elif instr_ident == PRN:
+                args = self.get_instr_args(mov_pc)
+                print(args)
+
+            else:
+                print("Invalid instruction")
+                print("Trace:")
+                print(self.trace())
+                self.running = False
+                sys.exit(1)
+
+            self.pc += mov_pc
