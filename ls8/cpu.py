@@ -4,6 +4,9 @@ import os
 import re
 import sys
 
+# Threaded Interrupt Timer Class import
+from interrupt_timer import InterruptTimer
+
 
 class CPU:
     """Main CPU class."""
@@ -22,10 +25,11 @@ class CPU:
         self.__gt_mask = 0b10
         self.__eq_mask = 0b1
 
-        # Interrupt Enabled?, Mask and Status regs
+        # Interrupt Enabled?, Mask and Status regs, Timer
         self.__ie = False
         self.__im = 5
         self.__is = 6
+        self.__it = InterruptTimer(1, self.handle_timer_interrupt)
 
         # Stack Pointer reg
         self.__sp = 7
@@ -140,14 +144,16 @@ class CPU:
         sys.exit(0)
 
     def handle_ldi(self, mov_pc):
-        (reg_idx, imm) = self.get_instr_args(mov_pc)
+        [reg_idx, imm] = self.get_instr_args(mov_pc)
         self.reg[reg_idx] = imm
 
     def handle_ld(self, mov_pc):
-        pass
+        [reg_idx_a, reg_idx_b] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx_a] = self.ram_read(self.reg[reg_idx_b])
 
     def handle_st(self, mov_pc):
-        pass
+        [reg_idx_a, reg_idx_b] = self.get_instr_args(mov_pc)
+        self.ram_write(self.reg[reg_idx_b], self.reg[reg_idx_a])
 
     def handle_push(self, mov_pc):
         [reg_idx] = self.get_instr_args(mov_pc)
@@ -162,7 +168,8 @@ class CPU:
         print(self.reg[arg])
 
     def handle_pra(self, mov_pc):
-        pass
+        [reg_idx] = self.get_instr_args(mov_pc)
+        print(chr(self.reg[reg_idx]))
 
     # ALU op handlers
     def handle_add(self, mov_pc):
@@ -251,7 +258,16 @@ class CPU:
         pass
 
     def handle_iret(self, mov_pc):
-        pass
+        # pop R6 through R0, FL reg, and PC off stack
+        # in that order
+        for i in range(7, 0, -1):
+            self.reg[i] = self.pop_stack()
+
+        self.__fl = self.pop_stack()
+        self.pc = self.pop_stack()
+
+        # re-enable interrupts
+        self.__ie = True
 
     def handle_jmp(self, mov_pc):
         [reg_idx] = self.get_instr_args(mov_pc)
@@ -314,6 +330,9 @@ class CPU:
         self.reg[self.__sp] += 1
 
         return val
+
+    def handle_timer_interrupt(self):
+        self.reg[self.__is] = 0b1
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -384,8 +403,40 @@ class CPU:
         """Run the CPU."""
         self.running = True
         self.__ie = True
+        self.__it.start()
 
         while self.running:
+            # Trace for debugging
+            # self.trace()
+
+            # Interrupt check
+            if self.reg[self.__is] and self.__ie:
+                masked_interrupts = self.reg[self.__im] & self.reg[self.__is]
+
+                # check all bits of IS register
+                for i in range(8):
+                    interrupt_occurred = ((masked_interrupts >> 1) & 1) == 1
+
+                    if interrupt_occurred:
+                        # disable further interrupts
+                        self.__ie = False
+
+                        # clear IS reg
+                        self.__is = 0b0
+
+                        # push PC reg, FL reg and R0 through R6 onto stack
+                        # in that order
+                        self.push_stack(self.pc)
+                        self.push_stack(self.__fl)
+                        for i in range(7):
+                            self.push_stack(self.reg[i])
+
+                        # set PC to vector from interrupt vector table
+                        self.pc = self.ram_read(self.i0)
+
+                        # break out of IS reg check
+                        break
+
             # Read instruction from memory
             self.ir = self.ram_read(self.pc)
 
@@ -407,6 +458,7 @@ class CPU:
                 print("Trace:")
                 print(self.trace())
                 self.running = False
+                self.__it.stop()
                 sys.exit(1)
 
             finally:
