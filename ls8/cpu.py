@@ -132,111 +132,144 @@ class CPU:
         self.pcm_branchtable[self.JGE] = self.handle_jge
 
     # Main op handlers
-    def handle_nop(self):
+    def handle_nop(self, mov_pc):
         pass
 
-    def handle_hlt(self, mov_pc=None):
+    def handle_hlt(self, mov_pc):
         self.running = False
         sys.exit(0)
 
-    def handle_ldi(self, mov_pc=None):
-        (reg, imm) = self.get_instr_args(mov_pc)
-        self.reg_write(imm, reg)
+    def handle_ldi(self, mov_pc):
+        (reg_idx, imm) = self.get_instr_args(mov_pc)
+        self.reg[reg_idx] = imm
 
-    def handle_ld(self):
+    def handle_ld(self, mov_pc):
         pass
 
-    def handle_st(self):
+    def handle_st(self, mov_pc):
         pass
 
-    def handle_push(self):
-        pass
+    def handle_push(self, mov_pc):
+        [reg_idx] = self.get_instr_args(mov_pc)
+        self.push_stack(self.reg[reg_idx])
 
-    def handle_pop(self):
-        pass
+    def handle_pop(self, mov_pc):
+        [reg_idx] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx] = self.pop_stack()
 
-    def handle_prn(self, mov_pc=None):
-        (arg) = self.get_instr_args(mov_pc)
-        print(self.reg_read(arg))
+    def handle_prn(self, mov_pc):
+        [arg] = self.get_instr_args(mov_pc)
+        print(self.reg[arg])
 
-    def handle_pra(self):
+    def handle_pra(self, mov_pc):
         pass
 
     # ALU op handlers
-    def handle_add(self):
-        pass
+    def handle_add(self, mov_pc):
+        [reg_idx_a, reg_idx_b] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx_a] += self.reg[reg_idx_b]
 
-    def handle_sub(self):
-        pass
+    def handle_sub(self, mov_pc):
+        [reg_idx_a, reg_idx_b] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx_a] -= self.reg[reg_idx_b]
 
-    def handle_mul(self, mov_pc=None):
-        (reg_idx_a, reg_idx_b) = self.get_instr_args(mov_pc)
+    def handle_mul(self, mov_pc):
+        [reg_idx_a, reg_idx_b] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx_a] *= self.reg[reg_idx_b]
 
-    def handle_div(self):
-        pass
+    def handle_div(self, mov_pc):
+        [reg_idx_a, reg_idx_b] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx_a] /= self.reg[reg_idx_b]
 
-    def handle_mod(self):
-        pass
+    def handle_mod(self, mov_pc):
+        [reg_idx_a, reg_idx_b] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx_a] %= self.reg[reg_idx_b]
 
-    def handle_inc(self):
-        pass
+    def handle_inc(self, mov_pc):
+        [reg_idx] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx] += 1
 
-    def handle_dec(self):
-        pass
+    def handle_dec(self, mov_pc):
+        [reg_idx] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx] -= 1
 
-    def handle_cmp(self):
-        pass
+    def handle_cmp(self, mov_pc):
+        # cmp masks
+        lt_mask = 0b100
+        gt_mask = 0b10
+        eq_mask = 0b1
 
-    def handle_and(self):
-        pass
+        # Clear fl reg
+        self.__fl = 0b0
 
-    def handle_not(self):
-        pass
+        [reg_idx_a, reg_idx_b] = self.get_instr_args(mov_pc)
 
-    def handle_or(self):
-        pass
+        if self.reg[reg_idx_a] == self.reg[reg_idx_b]:
+            self.__fl |= eq_mask
+        elif self.reg[reg_idx_a] < self.reg[reg_idx_b]:
+            self.__fl |= lt_mask
+        elif self.reg[reg_idx_a] > self.reg[reg_idx_b]:
+            self.__fl |= gt_mask
+        else:
+            self.__fl = 0b0
 
-    def handle_xor(self):
-        pass
+    def handle_and(self, mov_pc):
+        [reg_idx_a, reg_idx_b] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx_a] &= self.reg[reg_idx_b]
 
-    def handle_shl(self):
-        pass
+    def handle_not(self, mov_pc):
+        xor_mask = 0b11111111
+        [reg_idx] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx] ^= xor_mask
 
-    def handle_shr(self):
-        pass
+    def handle_or(self, mov_pc):
+        [reg_idx_a, reg_idx_b] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx_a] |= self.reg[reg_idx_b]
+
+    def handle_xor(self, mov_pc):
+        [reg_idx_a, reg_idx_b] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx_a] ^= self.reg[reg_idx_b]
+
+    def handle_shl(self, mov_pc):
+        [reg_idx_a, reg_idx_b] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx_a] << self.reg[reg_idx_b]
+
+    def handle_shr(self, mov_pc):
+        [reg_idx_a, reg_idx_b] = self.get_instr_args(mov_pc)
+        self.reg[reg_idx_a] >> self.reg[reg_idx_b]
 
     # PC Mutator op handlers
-    def handle_call(self):
+    def handle_call(self, mov_pc):
         pass
 
-    def handle_ret(self):
+    def handle_ret(self, mov_pc):
         pass
 
-    def handle_int(self):
+    def handle_int(self, mov_pc):
         pass
 
-    def handle_iret(self):
+    def handle_iret(self, mov_pc):
         pass
 
-    def handle_jmp(self):
+    def handle_jmp(self, mov_pc):
         pass
 
-    def handle_jeq(self):
+    def handle_jeq(self, mov_pc):
         pass
 
-    def handle_jne(self):
+    def handle_jne(self, mov_pc):
         pass
 
-    def handle_jgt(self):
+    def handle_jgt(self, mov_pc):
         pass
 
-    def handle_jlt(self):
+    def handle_jlt(self, mov_pc):
         pass
 
-    def handle_jle(self):
+    def handle_jle(self, mov_pc):
         pass
 
-    def handle_jge(self):
+    def handle_jge(self, mov_pc):
         pass
 
     def load(self, filename):
@@ -268,12 +301,6 @@ class CPU:
 
     def ram_write(self, mdr, mar):
         self.ram[mar] = mdr
-
-    def reg_read(self, reg_idx):
-        return self.reg[reg_idx]
-
-    def reg_write(self, val, reg_idx):
-        self.reg[reg_idx] = val
 
     def push_stack(self, val):
         self.reg[self.__sp] -= 1
@@ -365,9 +392,9 @@ class CPU:
             # Logic for ops
             try:
                 if is_alu:
-                    self.alu_branchtable[instr_ident]()
+                    self.alu_branchtable[instr_ident](mov_pc)
                 elif sets_pc:
-                    self.pcm_branchtable[instr_ident]()
+                    self.pcm_branchtable[instr_ident](mov_pc)
                 else:
                     self.main_branchtable[instr_ident](mov_pc)
 
