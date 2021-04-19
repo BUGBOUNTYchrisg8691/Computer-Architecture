@@ -240,10 +240,12 @@ class CPU:
 
     # PC Mutator op handlers
     def handle_call(self, mov_pc):
-        pass
+        self.push_stack(self.pc + mov_pc)
+        [reg_idx] = self.get_instr_args(mov_pc)
+        self.pc = self.reg[reg_idx]
 
     def handle_ret(self, mov_pc):
-        pass
+        self.pc = self.pop_stack()
 
     def handle_int(self, mov_pc):
         pass
@@ -252,7 +254,8 @@ class CPU:
         pass
 
     def handle_jmp(self, mov_pc):
-        pass
+        [reg_idx] = self.get_instr_args(mov_pc)
+        self.pc = self.reg[reg_idx]
 
     def handle_jeq(self, mov_pc):
         pass
