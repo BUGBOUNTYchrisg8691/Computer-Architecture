@@ -217,11 +217,11 @@ class CPU:
 
             elif instr_ident == LDI:
                 args = self.get_instr_args(mov_pc)
-                print(args)
+                self.reg_write(args[1], args[0])
 
             elif instr_ident == PRN:
                 args = self.get_instr_args(mov_pc)
-                print(args)
+                print(self.reg_read(args[0]))
 
             else:
                 print("Invalid instruction")
@@ -230,4 +230,5 @@ class CPU:
                 self.running = False
                 sys.exit(1)
 
-            self.pc += mov_pc
+            if not sets_pc:
+                self.pc += mov_pc
