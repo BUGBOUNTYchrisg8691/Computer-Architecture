@@ -46,6 +46,199 @@ class CPU:
         self.i6 = 0xFE
         self.i7 = 0xFF
 
+        # Instruction Identifiers
+        # Main ops
+        self.NOP = 0b0000
+        self.HLT = 0b0001
+        self.LDI = 0b0010
+        self.LD = 0b0011
+        self.ST = 0b0100
+        self.PUSH = 0b0101
+        self.POP = 0b0110
+        self.PRN = 0b0111
+        self.PRA = 0b1000
+
+        # ALU ops
+        self.ADD = 0b0000
+        self.SUB = 0b0001
+        self.MUL = 0b0010
+        self.DIV = 0b0011
+        self.MOD = 0b0100
+        self.INC = 0b0101
+        self.DEC = 0b0110
+        self.CMP = 0b0111
+        self.AND = 0b1000
+        self.NOT = 0b1001
+        self.OR = 0b1010
+        self.XOR = 0b1011
+        self.SHL = 0b1100
+        self.SHR = 0b1101
+
+        # PC Mutator ops
+        self.CALL = 0b0000
+        self.RET = 0b0001
+        self.INT = 0b0010
+        self.IRET = 0b0011
+        self.JMP = 0b0100
+        self.JEQ = 0b0101
+        self.JNE = 0b0110
+        self.JGT = 0b0111
+        self.JLT = 0b1000
+        self.JLE = 0b1001
+        self.JGE = 0b1010
+
+        # Branch Tables
+        # Main Branch Table
+        self.main_branchtable = {}
+        self.main_branchtable[self.NOP] = self.handle_nop
+        self.main_branchtable[self.HLT] = self.handle_hlt
+        self.main_branchtable[self.LDI] = self.handle_ldi
+        self.main_branchtable[self.LD] = self.handle_ld
+        self.main_branchtable[self.ST] = self.handle_st
+        self.main_branchtable[self.PUSH] = self.handle_push
+        self.main_branchtable[self.POP] = self.handle_pop
+        self.main_branchtable[self.PRN] = self.handle_prn
+        self.main_branchtable[self.PRA] = self.handle_pra
+
+        # ALU Branch Table
+        self.alu_branchtable = {}
+        self.alu_branchtable[self.ADD] = self.handle_add
+        self.alu_branchtable[self.SUB] = self.handle_sub
+        self.alu_branchtable[self.MUL] = self.handle_mul
+        self.alu_branchtable[self.DIV] = self.handle_div
+        self.alu_branchtable[self.MOD] = self.handle_mod
+        self.alu_branchtable[self.INC] = self.handle_inc
+        self.alu_branchtable[self.DEC] = self.handle_dec
+        self.alu_branchtable[self.CMP] = self.handle_cmp
+        self.alu_branchtable[self.AND] = self.handle_and
+        self.alu_branchtable[self.NOT] = self.handle_not
+        self.alu_branchtable[self.OR] = self.handle_or
+        self.alu_branchtable[self.XOR] = self.handle_xor
+        self.alu_branchtable[self.SHL] = self.handle_shl
+        self.alu_branchtable[self.SHR] = self.handle_shr
+
+        # PC Mutator Branch Table
+        self.pcm_branchtable = {}
+        self.pcm_branchtable[self.CALL] = self.handle_call
+        self.pcm_branchtable[self.RET] = self.handle_ret
+        self.pcm_branchtable[self.INT] = self.handle_int
+        self.pcm_branchtable[self.IRET] = self.handle_iret
+        self.pcm_branchtable[self.JMP] = self.handle_jmp
+        self.pcm_branchtable[self.JEQ] = self.handle_jeq
+        self.pcm_branchtable[self.JNE] = self.handle_jne
+        self.pcm_branchtable[self.JGT] = self.handle_jgt
+        self.pcm_branchtable[self.JLT] = self.handle_jlt
+        self.pcm_branchtable[self.JLE] = self.handle_jle
+        self.pcm_branchtable[self.JGE] = self.handle_jge
+
+    # Main op handlers
+    def handle_nop(self):
+        pass
+
+    def handle_hlt(self, mov_pc=None):
+        self.running = False
+        sys.exit(0)
+
+    def handle_ldi(self, mov_pc=None):
+        (reg, imm) = self.get_instr_args(mov_pc)
+        self.reg_write(imm, reg)
+
+    def handle_ld(self):
+        pass
+
+    def handle_st(self):
+        pass
+
+    def handle_push(self):
+        pass
+
+    def handle_pop(self):
+        pass
+
+    def handle_prn(self, mov_pc=None):
+        (arg) = self.get_instr_args(mov_pc)
+        print(self.reg_read(arg))
+
+    def handle_pra(self):
+        pass
+
+    # ALU op handlers
+    def handle_add(self):
+        pass
+
+    def handle_sub(self):
+        pass
+
+    def handle_mul(self, mov_pc=None):
+        (reg_idx_a, reg_idx_b) = self.get_instr_args(mov_pc)
+
+    def handle_div(self):
+        pass
+
+    def handle_mod(self):
+        pass
+
+    def handle_inc(self):
+        pass
+
+    def handle_dec(self):
+        pass
+
+    def handle_cmp(self):
+        pass
+
+    def handle_and(self):
+        pass
+
+    def handle_not(self):
+        pass
+
+    def handle_or(self):
+        pass
+
+    def handle_xor(self):
+        pass
+
+    def handle_shl(self):
+        pass
+
+    def handle_shr(self):
+        pass
+
+    # PC Mutator op handlers
+    def handle_call(self):
+        pass
+
+    def handle_ret(self):
+        pass
+
+    def handle_int(self):
+        pass
+
+    def handle_iret(self):
+        pass
+
+    def handle_jmp(self):
+        pass
+
+    def handle_jeq(self):
+        pass
+
+    def handle_jne(self):
+        pass
+
+    def handle_jgt(self):
+        pass
+
+    def handle_jlt(self):
+        pass
+
+    def handle_jle(self):
+        pass
+
+    def handle_jge(self):
+        pass
+
     def load(self, filename):
         """
         Load a program into memory using a path to an external file as a
@@ -92,26 +285,9 @@ class CPU:
 
         return val
 
-    def handle_alu(self, op, reg_a, reg_b):
+    def alu(self, op, reg_a, reg_b):
         """ALU operations."""
-
-        # ALU ops
-        ADD = 0b0000
-        SUB = 0b0001
-        MUL = 0b0010
-        DIV = 0b0011
-        MOD = 0b0100
-        INC = 0b0101
-        DEC = 0b0110
-        CMP = 0b0111
-        AND = 0b1000
-        NOT = 0b1001
-        OR = 0b1010
-        XOR = 0b1011
-        SHL = 0b1100
-        SHR = 0b1101
-
-        if instr_ident == ADD:
+        if op == self.ADD:
             self.reg[reg_a] += self.reg[reg_b]
         # elif op == "SUB": etc
         else:
@@ -119,19 +295,6 @@ class CPU:
 
     def handle_pc_mutators(self, instruction):
         """Handles ops that mutate the Program Counter."""
-        # PC mutator ops
-        CALL = 0b0000
-        RET = 0b0001
-        INT = 0b0010
-        IRET = 0b0011
-        JMP = 0b0100
-        JEQ = 0b0101
-        JNE = 0b0110
-        JGT = 0b0111
-        JLT = 0b1000
-        JLE = 0b1001
-        JGE = 0b1010
-
         pass
 
     def get_instr_args(self, mov_pc):
@@ -189,17 +352,6 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        # Other ops
-        NOP = 0b0000
-        HLT = 0b0001
-        LDI = 0b0010
-        LD = 0b0011
-        ST = 0b0100
-        PUSH = 0b0101
-        POP = 0b0110
-        PRN = 0b0111
-        PRA = 0b1000
-
         self.running = True
 
         while self.running:
@@ -211,24 +363,21 @@ class CPU:
             mov_pc, is_alu, sets_pc, instr_ident = dec_instr
 
             # Logic for ops
-            if instr_ident == HLT:
-                self.running = False
-                sys.exit(0)
+            try:
+                if is_alu:
+                    self.alu_branchtable[instr_ident]()
+                elif sets_pc:
+                    self.pcm_branchtable[instr_ident]()
+                else:
+                    self.main_branchtable[instr_ident](mov_pc)
 
-            elif instr_ident == LDI:
-                args = self.get_instr_args(mov_pc)
-                self.reg_write(args[1], args[0])
-
-            elif instr_ident == PRN:
-                args = self.get_instr_args(mov_pc)
-                print(self.reg_read(args[0]))
-
-            else:
+            except KeyError:
                 print("Invalid instruction")
                 print("Trace:")
                 print(self.trace())
                 self.running = False
                 sys.exit(1)
 
-            if not sets_pc:
-                self.pc += mov_pc
+            finally:
+                if not sets_pc:
+                    self.pc += mov_pc
