@@ -383,6 +383,7 @@ class CPU:
     def run(self):
         """Run the CPU."""
         self.running = True
+        self.__ie = True
 
         while self.running:
             # Read instruction from memory
